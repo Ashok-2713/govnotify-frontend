@@ -127,7 +127,7 @@ export default function AIAssistant({ userEmail }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/ai-assistant/chat", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/ai-assistant/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

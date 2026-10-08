@@ -19,7 +19,7 @@ import {
   ChevronRight, Landmark, Sparkles
 } from "lucide-react";
 
-const API_URL = "http://localhost:8080/api/auth";
+const API_URL = `${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/auth`;
 
 const features = [
   [Search, "Smart Job Search", "Search jobs by qualification, department, state, category, and deadline."],

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Bookmark, ExternalLink, Trash2, Search, Calendar, Building2, Link2, Clock } from "lucide-react";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 function fmtDateTime(dateStr) {
   if (!dateStr) return "N/A";

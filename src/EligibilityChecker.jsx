@@ -346,14 +346,14 @@ const EligibilityChecker = ({ userEmail, onBack, onCheck }) => {
 
   const handleCheck = () => {
     setLoading(true);
-    fetch('http://localhost:8080/api/eligibility/check', {
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/eligibility/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: userEmail, qualification, age, state, category })
     })
       .then(res => {
         if (!res.ok) {
-          return fetch('http://localhost:8080/api/jobs/all').then(r => r.json());
+          return fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/jobs/all`).then(r => r.json());
         }
         return res.json();
       })
@@ -369,7 +369,7 @@ const EligibilityChecker = ({ userEmail, onBack, onCheck }) => {
       })
       .catch(err => {
         console.error(err);
-        fetch('http://localhost:8080/api/jobs/all')
+        fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/jobs/all`)
           .then(r => r.json())
           .then(fallbackList => {
             const list = Array.isArray(fallbackList) ? fallbackList : [];

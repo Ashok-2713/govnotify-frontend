@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Mail, KeyRound, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 
-const API_URL = "http://localhost:8080/api/auth";
+const API_URL = `${import.meta.env.VITE_API_URL || "http://localhost:8080"}/api/auth`;
 
 export default function ForgotPasswordModal({ onClose, onBackToLogin }) {
   // Step 1: Email, Step 2: OTP, Step 3: New Password, Step 4: Success
