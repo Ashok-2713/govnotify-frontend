@@ -18,6 +18,19 @@ function daysLeft(dateStr) {
   return diff > 0 ? diff : 0;
 }
 
+// Helper: A job is considered "active" if its deadline has not yet passed.
+// If lastDate is missing, treat the job as active (assume it's still open).
+const isActiveJob = (job) => {
+  if (!job || !job.lastDate) return true;
+  const lastDate = new Date(job.lastDate);
+  if (isNaN(lastDate.getTime())) return true; // Invalid date → treat as active
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const last = new Date(lastDate);
+  last.setHours(0, 0, 0, 0);
+  return last >= today;
+};
+
 function fmtDate(dateStr) {
   if (!dateStr) return "N/A";
   const d = new Date(dateStr);
@@ -274,16 +287,14 @@ export default function UserDashboard({
   };
 
   const activeCurrentJobs = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     return jobs.filter(j => {
       if (j.status && (j.status === 'CLOSED' || j.status === 'ARCHIVED')) return false;
-      if (j.lastDate) {
-        const last = new Date(j.lastDate);
-        if (!isNaN(last.getTime()) && last < today) return false;
-      }
-      return true;
+      return isActiveJob(j);
     });
+  }, [jobs]);
+
+  const newJobsCount = useMemo(() => {
+    return jobs.filter(job => (job.isNew !== undefined ? job.isNew : true) && isActiveJob(job)).length;
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
@@ -305,9 +316,9 @@ export default function UserDashboard({
   }, [filteredJobs, showAllJobs]);
 
   const upcomingExams = useMemo(() => {
-    const upcoming = jobs.filter(j => j.status === 'UPCOMING');
+    const upcoming = jobs.filter(j => j.status === 'UPCOMING' && isActiveJob(j));
     if (upcoming.length > 0) return upcoming.slice(0, 4);
-    return jobs.filter(j => j.lastDate && daysLeft(j.lastDate) > 0 && j.status !== 'CLOSED' && j.status !== 'ARCHIVED').slice(0, 4);
+    return jobs.filter(j => isActiveJob(j) && j.lastDate && daysLeft(j.lastDate) > 0 && j.status !== 'CLOSED' && j.status !== 'ARCHIVED').slice(0, 4);
   }, [jobs]);
 
   const handleSendMessage = (textToSend) => {
@@ -686,7 +697,7 @@ export default function UserDashboard({
                 <TrendingUp size={18} className="trend-ico blue" />
               </div>
               <div className="kpi-content">
-                <h2>{jobs.length}</h2>
+                <h2>{newJobsCount}</h2>
                 <span className="kpi-title">New Jobs</span>
                 <small className="kpi-sub">This Week</small>
               </div>

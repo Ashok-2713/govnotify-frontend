@@ -22,6 +22,19 @@ function daysLeft(dateStr) {
   return diff > 0 ? diff : 0;
 }
 
+// Helper: A job is considered "active" if its deadline has not yet passed.
+// If lastDate is missing, treat the job as active (assume it's still open).
+const isActiveJob = (job) => {
+  if (!job || !job.lastDate) return true;
+  const lastDate = new Date(job.lastDate);
+  if (isNaN(lastDate.getTime())) return true; // Invalid date → treat as active
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const last = new Date(lastDate);
+  last.setHours(0, 0, 0, 0);
+  return last >= today;
+};
+
 const StatusBadge = ({ status }) => {
   const s = (status || "OPEN").toUpperCase();
   let bg = "#dcfce7";
@@ -136,7 +149,7 @@ export default function JobNotifications({ userEmail = "ashok.udhay@govnotify.in
           return {
             ...j,
             id: jobId,
-            isNew: isNewJob
+            isNew: isNewJob && isActiveJob(j)
           };
         });
 
@@ -172,7 +185,7 @@ export default function JobNotifications({ userEmail = "ashok.udhay@govnotify.in
   }, [jobs]);
 
   const newJobsCount = useMemo(() => {
-    return jobs.filter(j => j.isNew).length;
+    return jobs.filter(j => j.isNew && isActiveJob(j)).length;
   }, [jobs]);
 
   const handleSaveJob = (job) => {
@@ -214,8 +227,9 @@ export default function JobNotifications({ userEmail = "ashok.udhay@govnotify.in
   const filteredJobs = useMemo(() => {
     let result = [...jobs];
 
+    // New Jobs Only filter: only active, unexpired new jobs
     if (newJobsOnly) {
-      result = result.filter(j => j.isNew);
+      result = result.filter(j => j.isNew && isActiveJob(j));
     }
 
     // State or Central Category filter
@@ -260,6 +274,23 @@ export default function JobNotifications({ userEmail = "ashok.udhay@govnotify.in
       });
     }
 
+    // Deadline & Scope filter
+    if (selectedStatus === "CLOSED" || selectedStatus === "ARCHIVED") {
+      // Explicit closed/archived status selected
+      result = result.filter(j => !isActiveJob(j) || (j.status && (j.status.toUpperCase() === "CLOSED" || j.status.toUpperCase() === "ARCHIVED")));
+    } else if (scope === "closed") {
+      // "Closed Jobs" scope selected → only expired or closed jobs
+      result = result.filter(j => !isActiveJob(j) || (j.status && j.status.toUpperCase() === "CLOSED"));
+    } else if (scope === "archived") {
+      // "Archived Jobs" scope selected → only archived jobs
+      result = result.filter(j => !isActiveJob(j) || (j.status && j.status.toUpperCase() === "ARCHIVED"));
+    } else if (scope === "all") {
+      // "All Jobs" scope selected → no deadline filter (show everything)
+    } else {
+      // Default / "Active Jobs" (scope === "active") → ALWAYS exclude expired jobs
+      result = result.filter(j => isActiveJob(j));
+    }
+
     result.sort((a, b) => {
       if (sortBy === "lastDateDesc") {
         const dateA = a.lastDate ? new Date(a.lastDate).getTime() : 0;
@@ -278,7 +309,7 @@ export default function JobNotifications({ userEmail = "ashok.udhay@govnotify.in
     });
 
     return result;
-  }, [jobs, newJobsOnly, searchQuery, selectedState, selectedStatus, sortBy]);
+  }, [jobs, newJobsOnly, searchQuery, selectedState, selectedStatus, sortBy, scope]);
 
   const getStatusBadgeStyle = (status) => {
     const s = (status || "OPEN").toUpperCase();
