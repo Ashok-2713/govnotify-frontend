@@ -38,18 +38,39 @@ function fmtDate(dateStr) {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getMonthAbbr(dateStr) {
-  if (!dateStr) return "MAY";
+// Helper: Format date into month abbreviation and day number
+const formatDateBadge = (dateStr) => {
+  if (!dateStr) return { month: "TBD", day: "—", valid: false };
   const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "MAY";
-  return d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+  if (isNaN(d.getTime())) return { month: "TBD", day: "—", valid: false };
+  return {
+    month: d.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+    day: d.getDate(),
+    valid: true
+  };
+};
+
+// Helper: Compute days until a given date
+const daysUntil = (dateStr) => {
+  if (!dateStr) return "TBD";
+  const target = new Date(dateStr);
+  if (isNaN(target.getTime())) return "TBD";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round((target - today) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return "Expired";
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return `In ${diff} days`;
+};
+
+function getMonthAbbr(dateStr) {
+  return formatDateBadge(dateStr).month;
 }
 
 function getDayNum(dateStr) {
-  if (!dateStr) return "15";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "15";
-  return d.getDate().toString();
+  return String(formatDateBadge(dateStr).day);
 }
 
 function getOrgLogo(stateName, organization, title) {
@@ -316,9 +337,30 @@ export default function UserDashboard({
   }, [filteredJobs, showAllJobs]);
 
   const upcomingExams = useMemo(() => {
-    const upcoming = jobs.filter(j => j.status === 'UPCOMING' && isActiveJob(j));
-    if (upcoming.length > 0) return upcoming.slice(0, 4);
-    return jobs.filter(j => isActiveJob(j) && j.lastDate && daysLeft(j.lastDate) > 0 && j.status !== 'CLOSED' && j.status !== 'ARCHIVED').slice(0, 4);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return jobs
+      .filter(job => {
+        if (job.status === 'CLOSED' || job.status === 'ARCHIVED') return false;
+        const d = job.examDate || job.lastDate;
+        if (!d) {
+          return job.status === 'UPCOMING';
+        }
+        const target = new Date(d);
+        if (isNaN(target.getTime())) return false;
+        target.setHours(0, 0, 0, 0);
+        return target >= today;
+      })
+      .sort((a, b) => {
+        const dateA = a.examDate || a.lastDate;
+        const dateB = b.examDate || b.lastDate;
+        if (dateA && dateB) return new Date(dateA) - new Date(dateB);
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+        return (Number(b.id) || 0) - (Number(a.id) || 0);
+      })
+      .slice(0, 4);
   }, [jobs]);
 
   const handleSendMessage = (textToSend) => {
@@ -826,21 +868,26 @@ export default function UserDashboard({
                 </div>
               ) : (
                 <div className="exams-list">
-                  {upcomingExams.map((job, idx) => {
-                    const examKey = job.id ? `exam-${job.id}` : `exam-${idx}`;
-                    const targetDate = job.lastDate || job.registrationStartDate;
-                    const leftDays = daysLeft(targetDate);
+                  {upcomingExams.map((exam, idx) => {
+                    const examKey = exam.id ? `exam-${exam.id}` : `exam-${idx}`;
+                    const displayDate = exam.examDate || exam.lastDate || null;
+                    const badge = formatDateBadge(displayDate);
+                    const daysLabel = daysUntil(displayDate);
                     return (
                       <div className="exam-item-card" key={examKey}>
                         <div className="exam-date-box">
-                          <span className="exam-month">{getMonthAbbr(targetDate)}</span>
-                          <strong className="exam-day">{getDayNum(targetDate)}</strong>
+                          <span className="exam-month">{badge.month}</span>
+                          <strong className="exam-day">{badge.day}</strong>
                         </div>
                         <div className="exam-details">
-                          <h4>{job.title}</h4>
-                          <p>{job.organization || "Government Organization"}</p>
+                          <h4>{exam.title}</h4>
+                          <p>{exam.organization || "Government Organization"}</p>
                         </div>
-                        <div className="exam-countdown-badge"><span>In {leftDays} days</span></div>
+                        <div className="exam-countdown-badge">
+                          <span style={daysLabel === "TBD" ? { background: "#f1f5f9", color: "#64748b" } : (daysLabel === "Today" ? { background: "#fee2e2", color: "#b91c1c" } : (daysLabel === "Tomorrow" ? { background: "#ffedd5", color: "#c2410c" } : {}))}>
+                            {daysLabel}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
