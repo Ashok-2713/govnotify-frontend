@@ -149,6 +149,7 @@ export default function UserDashboard({
   appliedEligibilityFilter = null,
   onClearEligibilityFilter
 }) {
+  const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [eligibilityFilter, setEligibilityFilter] = useState(appliedEligibilityFilter || null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -190,11 +191,18 @@ export default function UserDashboard({
   const [isTyping, setIsTyping] = useState(false);
 
   const fetchAllJobs = () => {
+    setLoading(true);
     fetch(`${API_BASE}/api/jobs?scope=active`)
       .then(res => res.ok ? res.text() : "")
       .then(text => text ? JSON.parse(text) : [])
-      .then(data => { if (Array.isArray(data)) setJobs(data); })
-      .catch(err => console.error("API Error:", err));
+      .then(data => {
+        if (Array.isArray(data)) setJobs(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("API Error:", err);
+        setLoading(false);
+      });
   };
 
   const loadSavedJobs = () => {
@@ -233,15 +241,24 @@ export default function UserDashboard({
       setEligibilityFilter(appliedEligibilityFilter);
       if (appliedEligibilityFilter.jobs && Array.isArray(appliedEligibilityFilter.jobs)) {
         setJobs(appliedEligibilityFilter.jobs);
+        setLoading(false);
       } else {
+        setLoading(true);
         fetch(`${API_BASE}/api/eligibility/check`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: userEmail, ...appliedEligibilityFilter })
         })
           .then(res => res.ok ? res.json() : [])
-          .then(data => { if (Array.isArray(data)) setJobs(data); else fetchAllJobs(); })
-          .catch(() => fetchAllJobs());
+          .then(data => {
+            if (Array.isArray(data)) setJobs(data);
+            else fetchAllJobs();
+            setLoading(false);
+          })
+          .catch(() => {
+            fetchAllJobs();
+            setLoading(false);
+          });
       }
     } else {
       setEligibilityFilter(null);
@@ -739,7 +756,19 @@ export default function UserDashboard({
                 <TrendingUp size={18} className="trend-ico blue" />
               </div>
               <div className="kpi-content">
-                <h2>{newJobsCount}</h2>
+                {loading ? (
+                  <span style={{
+                    display: "inline-block",
+                    width: "60px",
+                    height: "28px",
+                    background: "#e2e8f0",
+                    borderRadius: "6px",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                    marginBottom: "2px"
+                  }} />
+                ) : (
+                  <h2>{newJobsCount}</h2>
+                )}
                 <span className="kpi-title">New Jobs</span>
                 <small className="kpi-sub">This Week</small>
               </div>
@@ -751,7 +780,19 @@ export default function UserDashboard({
                 <TrendingUp size={18} className="trend-ico green" />
               </div>
               <div className="kpi-content">
-                <h2>{savedCount}</h2>
+                {loading ? (
+                  <span style={{
+                    display: "inline-block",
+                    width: "60px",
+                    height: "28px",
+                    background: "#e2e8f0",
+                    borderRadius: "6px",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                    marginBottom: "2px"
+                  }} />
+                ) : (
+                  <h2>{savedCount}</h2>
+                )}
                 <span className="kpi-title">Saved Jobs</span>
                 <small className="kpi-sub">Total Saved</small>
               </div>
@@ -763,7 +804,19 @@ export default function UserDashboard({
                 <TrendingUp size={18} className="trend-ico purple" />
               </div>
               <div className="kpi-content">
-                <h2>{appliedCount}</h2>
+                {loading ? (
+                  <span style={{
+                    display: "inline-block",
+                    width: "60px",
+                    height: "28px",
+                    background: "#e2e8f0",
+                    borderRadius: "6px",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                    marginBottom: "2px"
+                  }} />
+                ) : (
+                  <h2>{appliedCount}</h2>
+                )}
                 <span className="kpi-title">Applied Jobs</span>
                 <small className="kpi-sub">Total Applied</small>
               </div>
@@ -775,7 +828,19 @@ export default function UserDashboard({
                 <TrendingUp size={18} className="trend-ico orange" />
               </div>
               <div className="kpi-content">
-                <h2>{upcomingExams.length}</h2>
+                {loading ? (
+                  <span style={{
+                    display: "inline-block",
+                    width: "60px",
+                    height: "28px",
+                    background: "#e2e8f0",
+                    borderRadius: "6px",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                    marginBottom: "2px"
+                  }} />
+                ) : (
+                  <h2>{upcomingExams.length}</h2>
+                )}
                 <span className="kpi-title">Upcoming Exams</span>
                 <small className="kpi-sub">This Month</small>
               </div>
@@ -812,7 +877,12 @@ export default function UserDashboard({
                 </button>
               </div>
 
-              {filteredJobs.length === 0 ? (
+              {loading ? (
+                <div style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8" }}>
+                  <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", marginBottom: "8px" }} />
+                  <p style={{ margin: 0, fontSize: "13px" }}>Loading job notifications...</p>
+                </div>
+              ) : filteredJobs.length === 0 ? (
                 <div className="empty-state">
                   <Briefcase size={36} color="#94a3b8" />
                   <p>No job notifications match your search.</p>
@@ -857,11 +927,49 @@ export default function UserDashboard({
             </section>
 
             <section className="pro-card-panel exams-panel">
-              <div className="panel-header">
-                <h3>Upcoming Exams</h3>
-                <button className="link-btn" onClick={onExamCalendarClick || (() => setActiveTab("calendar"))}>View Calendar</button>
+              <div className="panel-header" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginBottom: "12px"
+              }}>
+                <h3 style={{
+                  fontSize: "16px",
+                  fontWeight: "800",
+                  color: "#0f172a",
+                  margin: 0,
+                  flexShrink: 1,
+                  minWidth: 0
+                }}>Upcoming Exams</h3>
+                <button
+                  className="link-btn"
+                  onClick={onExamCalendarClick || (() => setActiveTab("calendar"))}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#2563eb",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                    padding: "4px 8px"
+                  }}
+                >
+                  View Calendar
+                </button>
               </div>
-              {upcomingExams.length === 0 ? (
+              {loading ? (
+                <div style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8" }}>
+                  <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", marginBottom: "8px" }} />
+                  <p style={{ margin: 0, fontSize: "13px" }}>Loading upcoming exams...</p>
+                </div>
+              ) : upcomingExams.length === 0 ? (
                 <div className="empty-exams-state">
                   <Calendar size={32} color="#94a3b8" />
                   <p>No upcoming exams at the moment.</p>
@@ -1104,10 +1212,19 @@ const DASHBOARD_CSS = `
 
   .pro-main-grid { display: grid; grid-template-columns: 1.75fr 1fr; gap: 20px; align-items: start; }
   .pro-card-panel { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
-  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .panel-header h3 { font-size: 16px; font-weight: 800; color: var(--text-dark); }
-  .link-btn { background: transparent; border: none; color: #2563eb; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: 0.2s; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .panel-header h3 { font-size: 16px; font-weight: 800; color: var(--text-dark); margin: 0; flex-shrink: 1; min-width: 0; }
+  .link-btn { background: transparent; border: none; color: #2563eb; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; padding: 4px 8px; }
   .link-btn:hover { text-decoration: underline; color: #1d4ed8; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 
   .job-cards-list { display: flex; flex-direction: column; gap: 10px; }
   .job-notification-card { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg); gap: 12px; transition: 0.2s; }
