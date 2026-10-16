@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BarChart3,
   Users,
@@ -7,7 +7,10 @@ import {
   RefreshCw,
   TrendingUp,
   Activity,
-  PieChart
+  PieChart,
+  ArrowLeft,
+  Clock,
+  Award
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -30,8 +33,8 @@ export default function AdminAnalytics({ onBack }) {
   const [topSavedJobs, setTopSavedJobs] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchAnalyticsData = () => {
-    setIsRefreshing(true);
+  const fetchAnalyticsData = useCallback((silent = false) => {
+    if (!silent) setIsRefreshing(true);
     setError(null);
 
     Promise.allSettled([
@@ -85,22 +88,27 @@ export default function AdminAnalytics({ onBack }) {
         );
 
         if (!hasData) {
-          setError("Could not connect to backend server. Make sure the Spring Boot API is running.");
+          setError("Unable to connect to analytics services. Please ensure the backend is running.");
         }
       })
       .catch((err) => {
         console.error("Failed to load analytics data:", err);
-        setError("Error fetching analytics data from the server.");
+        setError("Error fetching analytics data from server.");
       })
       .finally(() => {
         setLoading(false);
         setIsRefreshing(false);
       });
-  };
-
-  useEffect(() => {
-    fetchAnalyticsData();
   }, []);
+
+  // Initial fetch and auto-refresh every 60 seconds
+  useEffect(() => {
+    fetchAnalyticsData(false);
+    const timer = setInterval(() => {
+      fetchAnalyticsData(true);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [fetchAnalyticsData]);
 
   // Sorted list for State
   const sortedStates = useMemo(() => {
@@ -122,192 +130,218 @@ export default function AdminAnalytics({ onBack }) {
     return Math.max(...sortedCategories.map(([, count]) => count), 1);
   }, [sortedCategories]);
 
-  // Badge style resolver for status
-  const getStatusBadgeStyle = (status) => {
-    const s = String(status || "").toUpperCase();
-    if (s.includes("OPEN") || s.includes("ACTIVE")) {
-      return { bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" };
-    }
-    if (s.includes("CLOSE") || s.includes("EXPIRED")) {
-      return { bg: "#fee2e2", color: "#b91c1c", border: "#fecaca" };
-    }
-    if (s.includes("UPCOMING")) {
-      return { bg: "#ffedd5", color: "#c2410c", border: "#fed7aa" };
-    }
-    if (s.includes("ARCHIV")) {
-      return { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0" };
-    }
-    return { bg: "#e0e7ff", color: "#4338ca", border: "#c7d2fe" };
-  };
+  // Donut chart status segments computation
+  const { donutSegments, totalStatusCount } = useMemo(() => {
+    const entries = Object.entries(jobsByStatus || {});
+    const total = entries.reduce((acc, [, val]) => acc + (Number(val) || 0), 0);
+
+    const statusColorMap = {
+      OPEN: "#10b981", // green
+      ACTIVE: "#10b981",
+      APPROVED: "#10b981",
+      CLOSED: "#ef4444", // red
+      EXPIRED: "#ef4444",
+      UPCOMING: "#f97316", // orange
+      ARCHIVED: "#94a3b8", // gray
+      PENDING: "#8b5cf6" // purple
+    };
+
+    const radius = 68;
+    const circumference = 2 * Math.PI * radius; // ~427.2566
+    let accumulatedOffset = 0;
+
+    const segments = entries.map(([statusKey, countVal]) => {
+      const count = Number(countVal) || 0;
+      const normalizedKey = statusKey.toUpperCase();
+      let color = "#2563eb"; // fallback blue
+      for (const [k, c] of Object.entries(statusColorMap)) {
+        if (normalizedKey.includes(k)) {
+          color = c;
+          break;
+        }
+      }
+
+      const fraction = total > 0 ? count / total : 0;
+      const strokeDasharray = `${fraction * circumference} ${circumference}`;
+      const strokeDashoffset = -accumulatedOffset;
+      accumulatedOffset += fraction * circumference;
+      const percent = total > 0 ? Math.round(fraction * 100) : 0;
+
+      return {
+        key: statusKey,
+        count,
+        percent,
+        color,
+        strokeDasharray,
+        strokeDashoffset
+      };
+    });
+
+    return { donutSegments: segments, totalStatusCount: total };
+  }, [jobsByStatus]);
 
   return (
-    <div className="pro-analytics-root">
-      <style>{ANALYTICS_CSS}</style>
+    <div className="analytics-module-root">
+      <style>{ANALYTICS_STYLES}</style>
 
-      <div className="analytics-container">
-        {/* ── 1. PAGE HEADER ── */}
-        <header className="analytics-header">
-          <div className="header-titles">
-            <div className="header-badge">
-              <Activity size={14} color="#2563eb" />
-              <span>Platform Intelligence</span>
-            </div>
-            <h1>Admin Analytics Dashboard</h1>
-            <p>Real-time overview of platform activity, job distributions, and user engagement</p>
-          </div>
-
-          <div className="header-actions">
-            {lastUpdated && (
-              <span className="last-updated-text">
-                Last updated at <strong>{lastUpdated}</strong>
-              </span>
-            )}
-            <button
-              onClick={fetchAnalyticsData}
-              disabled={isRefreshing}
-              className="refresh-btn"
-              title="Refresh analytics data"
-            >
-              <RefreshCw
-                size={16}
-                style={{
-                  animation: isRefreshing ? "spin 1s linear infinite" : "none"
-                }}
-              />
-              <span>{isRefreshing ? "Refreshing..." : "Refresh Data"}</span>
-            </button>
+      {/* ── 1. PAGE HEADER ── */}
+      <div className="analytics-header-card">
+        <div className="header-meta">
+          <div className="header-top-row">
+            <span className="admin-chip">ADMIN ANALYTICS</span>
             {onBack && (
-              <button onClick={onBack} className="back-btn">
-                Back
+              <button onClick={onBack} className="back-link-btn" title="Back to Dashboard">
+                <ArrowLeft size={14} />
+                <span>Back to Dashboard</span>
               </button>
             )}
           </div>
-        </header>
+          <h1 className="header-title">Analytics Dashboard</h1>
+          <p className="header-subtitle">
+            Real-time platform metrics, distribution insights, and candidate activity across India.
+          </p>
+        </div>
 
-        {/* Error notification banner if any */}
-        {error && (
-          <div className="analytics-alert-banner">
-            <span>{error}</span>
+        <div className="header-controls">
+          {lastUpdated && (
+            <div className="timestamp-badge">
+              <Clock size={13} color="#64748b" />
+              <span>
+                Updated: <strong>{lastUpdated}</strong>
+              </span>
+            </div>
+          )}
+          <button
+            onClick={() => fetchAnalyticsData(false)}
+            disabled={isRefreshing}
+            className="refresh-action-btn"
+            title="Refresh analytics data"
+          >
+            <RefreshCw
+              size={15}
+              style={{
+                animation: isRefreshing ? "spin 1s linear infinite" : "none"
+              }}
+            />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Alert banner if error occurs */}
+      {error && (
+        <div className="analytics-error-banner">
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* ── 2. ROW OF 4 KPI STAT CARDS ── */}
+      <section className="analytics-kpi-row">
+        {/* KPI 1: Total Jobs */}
+        <div className="analytics-kpi-card">
+          <div className="kpi-top">
+            <div className="kpi-icon-wrap icon-blue">
+              <Briefcase size={20} color="#2563eb" />
+            </div>
+            <span className="kpi-tag blue-tag">Total</span>
           </div>
-        )}
+          <div className="kpi-num">
+            {loading ? <span className="kpi-skeleton" /> : (overview.totalJobs || 0).toLocaleString()}
+          </div>
+          <div className="kpi-label">Total Jobs</div>
+          <div className="kpi-sub">Across all regions & sectors</div>
+        </div>
 
-        {/* ── 2. ROW OF 4 KPI CARDS (Matching UserDashboard style) ── */}
-        <section className="pro-kpi-grid">
-          {/* Card 1: Total Jobs */}
-          <div className="pro-kpi-card blue">
-            <div className="kpi-header">
-              <div className="kpi-ico-box blue">
-                <Briefcase size={22} color="#2563eb" />
+        {/* KPI 2: Total Users */}
+        <div className="analytics-kpi-card">
+          <div className="kpi-top">
+            <div className="kpi-icon-wrap icon-green">
+              <Users size={20} color="#10b981" />
+            </div>
+            <span className="kpi-tag green-tag">Registered</span>
+          </div>
+          <div className="kpi-num">
+            {loading ? <span className="kpi-skeleton" /> : (overview.totalUsers || 0).toLocaleString()}
+          </div>
+          <div className="kpi-label">Total Users</div>
+          <div className="kpi-sub">Active candidate accounts</div>
+        </div>
+
+        {/* KPI 3: Saved Jobs */}
+        <div className="analytics-kpi-card">
+          <div className="kpi-top">
+            <div className="kpi-icon-wrap icon-purple">
+              <Bookmark size={20} color="#7c3aed" />
+            </div>
+            <span className="kpi-tag purple-tag">Bookmarks</span>
+          </div>
+          <div className="kpi-num">
+            {loading ? <span className="kpi-skeleton" /> : (overview.totalSavedJobs || 0).toLocaleString()}
+          </div>
+          <div className="kpi-label">Saved Jobs</div>
+          <div className="kpi-sub">Candidate saved notifications</div>
+        </div>
+
+        {/* KPI 4: Active Jobs */}
+        <div className="analytics-kpi-card">
+          <div className="kpi-top">
+            <div className="kpi-icon-wrap icon-orange">
+              <TrendingUp size={20} color="#ea580c" />
+            </div>
+            <span className="kpi-tag orange-tag">Open Now</span>
+          </div>
+          <div className="kpi-num">
+            {loading ? <span className="kpi-skeleton" /> : (overview.activeJobs || 0).toLocaleString()}
+          </div>
+          <div className="kpi-label">Active Jobs</div>
+          <div className="kpi-sub">Currently accepting applications</div>
+        </div>
+      </section>
+
+      {/* ── 3. TWO-COLUMN GRID: JOBS BY STATE & JOBS BY CATEGORY ── */}
+      <section className="analytics-charts-grid">
+        {/* Left: Jobs by State */}
+        <div className="pro-chart-card">
+          <div className="chart-header">
+            <div className="chart-header-left">
+              <div className="chart-badge-icon blue-badge">
+                <BarChart3 size={17} color="#2563eb" />
               </div>
-              <TrendingUp size={18} className="trend-ico blue" />
+              <div>
+                <h3 className="chart-title">Jobs by State</h3>
+                <p className="chart-desc">Regional distribution of government opportunities</p>
+              </div>
             </div>
-            <div className="kpi-content">
-              {loading ? (
-                <span className="kpi-skeleton" />
-              ) : (
-                <h2>{(overview.totalJobs || 0).toLocaleString()}</h2>
-              )}
-              <span className="kpi-title">Total Jobs</span>
-              <small className="kpi-sub">Across all regions & sectors</small>
-            </div>
+            <span className="count-pill">{sortedStates.length} Regions</span>
           </div>
 
-          {/* Card 2: Total Users */}
-          <div className="pro-kpi-card green">
-            <div className="kpi-header">
-              <div className="kpi-ico-box green">
-                <Users size={22} color="#10b981" />
-              </div>
-              <TrendingUp size={18} className="trend-ico green" />
-            </div>
-            <div className="kpi-content">
-              {loading ? (
-                <span className="kpi-skeleton" />
-              ) : (
-                <h2>{(overview.totalUsers || 0).toLocaleString()}</h2>
-              )}
-              <span className="kpi-title">Total Users</span>
-              <small className="kpi-sub">Registered candidate profiles</small>
-            </div>
-          </div>
-
-          {/* Card 3: Saved Jobs */}
-          <div className="pro-kpi-card purple">
-            <div className="kpi-header">
-              <div className="kpi-ico-box purple">
-                <Bookmark size={22} color="#8b5cf6" />
-              </div>
-              <TrendingUp size={18} className="trend-ico purple" />
-            </div>
-            <div className="kpi-content">
-              {loading ? (
-                <span className="kpi-skeleton" />
-              ) : (
-                <h2>{(overview.totalSavedJobs || 0).toLocaleString()}</h2>
-              )}
-              <span className="kpi-title">Saved Jobs</span>
-              <small className="kpi-sub">Bookmarked notifications</small>
-            </div>
-          </div>
-
-          {/* Card 4: Active Jobs */}
-          <div className="pro-kpi-card orange">
-            <div className="kpi-header">
-              <div className="kpi-ico-box orange">
-                <TrendingUp size={22} color="#f97316" />
-              </div>
-              <Activity size={18} className="trend-ico orange" />
-            </div>
-            <div className="kpi-content">
-              {loading ? (
-                <span className="kpi-skeleton" />
-              ) : (
-                <h2>{(overview.activeJobs || 0).toLocaleString()}</h2>
-              )}
-              <span className="kpi-title">Active Jobs</span>
-              <small className="kpi-sub">Currently open for application</small>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 3. TWO-COLUMN GRID: JOBS BY STATE & CATEGORY ── */}
-        <section className="analytics-two-col">
-          {/* Left Column: Jobs by State */}
-          <div className="pro-card-panel">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <BarChart3 size={18} color="#2563eb" />
-                <h3>Jobs by State</h3>
-              </div>
-              <span className="panel-badge">{sortedStates.length} Regions</span>
-            </div>
-
+          <div className="chart-body">
             {loading ? (
-              <div className="panel-loading-state">
-                <RefreshCw size={24} className="spin-icon" color="#2563eb" />
-                <p>Loading regional job metrics...</p>
+              <div className="chart-loading-state">
+                <RefreshCw size={22} className="spin-icon" color="#2563eb" />
+                <span>Loading state breakdown...</span>
               </div>
             ) : sortedStates.length === 0 ? (
-              <div className="panel-empty-state">
-                <p>No regional job statistics available.</p>
-              </div>
+              <div className="chart-empty-state">No state-level data recorded.</div>
             ) : (
-              <div className="bar-list">
+              <div className="bar-chart-list">
                 {sortedStates.map(([stateName, count]) => {
                   const pct = Math.round((count / maxStateCount) * 100);
                   return (
-                    <div key={stateName} className="bar-row">
-                      <div className="bar-label-group">
-                        <span className="bar-name">{stateName}</span>
-                        <span className="bar-val">
-                          {count} {count === 1 ? "job" : "jobs"}
+                    <div className="bar-row-wrap" key={stateName}>
+                      <div className="bar-label-col">
+                        <span className="bar-label-text" title={stateName}>
+                          {stateName}
                         </span>
                       </div>
-                      <div className="bar-track">
+                      <div className="bar-track-col">
                         <div
-                          className="bar-fill blue-fill"
-                          style={{ width: `${Math.max(pct, 6)}%` }}
+                          className="bar-fill-bar bar-blue-gradient"
+                          style={{ width: `${Math.max(pct, 5)}%` }}
                         />
+                      </div>
+                      <div className="bar-count-col">
+                        <span className="bar-count-value">{count.toLocaleString()}</span>
                       </div>
                     </div>
                   );
@@ -315,43 +349,50 @@ export default function AdminAnalytics({ onBack }) {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Right Column: Jobs by Category */}
-          <div className="pro-card-panel">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <PieChart size={18} color="#10b981" />
-                <h3>Jobs by Category</h3>
+        {/* Right: Jobs by Category */}
+        <div className="pro-chart-card">
+          <div className="chart-header">
+            <div className="chart-header-left">
+              <div className="chart-badge-icon green-badge">
+                <PieChart size={17} color="#10b981" />
               </div>
-              <span className="panel-badge">{sortedCategories.length} Categories</span>
+              <div>
+                <h3 className="chart-title">Jobs by Category</h3>
+                <p className="chart-desc">Sectors & occupational departments</p>
+              </div>
             </div>
+            <span className="count-pill">{sortedCategories.length} Categories</span>
+          </div>
 
+          <div className="chart-body">
             {loading ? (
-              <div className="panel-loading-state">
-                <RefreshCw size={24} className="spin-icon" color="#10b981" />
-                <p>Loading category statistics...</p>
+              <div className="chart-loading-state">
+                <RefreshCw size={22} className="spin-icon" color="#10b981" />
+                <span>Loading category metrics...</span>
               </div>
             ) : sortedCategories.length === 0 ? (
-              <div className="panel-empty-state">
-                <p>No category statistics available.</p>
-              </div>
+              <div className="chart-empty-state">No category data recorded.</div>
             ) : (
-              <div className="bar-list">
-                {sortedCategories.map(([categoryName, count]) => {
+              <div className="bar-chart-list">
+                {sortedCategories.map(([catName, count]) => {
                   const pct = Math.round((count / maxCategoryCount) * 100);
                   return (
-                    <div key={categoryName} className="bar-row">
-                      <div className="bar-label-group">
-                        <span className="bar-name">{categoryName}</span>
-                        <span className="bar-val">
-                          {count} {count === 1 ? "job" : "jobs"}
+                    <div className="bar-row-wrap" key={catName}>
+                      <div className="bar-label-col">
+                        <span className="bar-label-text" title={catName}>
+                          {catName}
                         </span>
                       </div>
-                      <div className="bar-track">
+                      <div className="bar-track-col">
                         <div
-                          className="bar-fill green-fill"
-                          style={{ width: `${Math.max(pct, 6)}%` }}
+                          className="bar-fill-bar bar-green-gradient"
+                          style={{ width: `${Math.max(pct, 5)}%` }}
                         />
+                      </div>
+                      <div className="bar-count-col">
+                        <span className="bar-count-value">{count.toLocaleString()}</span>
                       </div>
                     </div>
                   );
@@ -359,125 +400,182 @@ export default function AdminAnalytics({ onBack }) {
               </div>
             )}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── 4. FULL-WIDTH: JOBS BY STATUS ── */}
-        <section className="pro-card-panel">
-          <div className="panel-header">
-            <div className="panel-title-group">
-              <Activity size={18} color="#f97316" />
-              <h3>Jobs by Status</h3>
+      {/* ── 4. FULL-WIDTH ROW: JOBS BY STATUS (DONUT CHART) ── */}
+      <section className="pro-chart-card">
+        <div className="chart-header">
+          <div className="chart-header-left">
+            <div className="chart-badge-icon orange-badge">
+              <Activity size={17} color="#ea580c" />
             </div>
-            <span className="panel-badge">
-              {Object.keys(jobsByStatus || {}).length} Status Types
-            </span>
+            <div>
+              <h3 className="chart-title">Jobs by Status</h3>
+              <p className="chart-desc">Current lifecycle stages of all recorded vacancies</p>
+            </div>
           </div>
+          <span className="count-pill">{donutSegments.length} Status Types</span>
+        </div>
 
+        <div className="chart-body">
           {loading ? (
-            <div className="panel-loading-state">
-              <RefreshCw size={24} className="spin-icon" color="#f97316" />
-              <p>Analyzing job statuses...</p>
+            <div className="chart-loading-state">
+              <RefreshCw size={22} className="spin-icon" color="#ea580c" />
+              <span>Analyzing job statuses...</span>
             </div>
-          ) : Object.keys(jobsByStatus || {}).length === 0 ? (
-            <div className="panel-empty-state">
-              <p>No job status data recorded.</p>
-            </div>
+          ) : donutSegments.length === 0 ? (
+            <div className="chart-empty-state">No status distribution available.</div>
           ) : (
-            <div className="status-grid">
-              {Object.entries(jobsByStatus).map(([statusName, count]) => {
-                const badgeStyle = getStatusBadgeStyle(statusName);
-                return (
-                  <div
-                    key={statusName}
-                    className="status-card"
-                    style={{ borderColor: badgeStyle.border }}
-                  >
-                    <div
-                      className="status-pill"
-                      style={{
-                        backgroundColor: badgeStyle.bg,
-                        color: badgeStyle.color,
-                        border: `1px solid ${badgeStyle.border}`
-                      }}
-                    >
-                      <span
-                        className="status-dot"
-                        style={{ backgroundColor: badgeStyle.color }}
+            <div className="donut-chart-layout">
+              {/* SVG Donut */}
+              <div className="donut-visual-box">
+                <svg viewBox="0 0 200 200" className="donut-svg">
+                  {/* Background Track */}
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="68"
+                    fill="transparent"
+                    stroke="#f1f5f9"
+                    strokeWidth="24"
+                  />
+                  {/* Segments */}
+                  <g transform="rotate(-90 100 100)">
+                    {donutSegments.map((seg) => (
+                      <circle
+                        key={seg.key}
+                        cx="100"
+                        cy="100"
+                        r="68"
+                        fill="transparent"
+                        stroke={seg.color}
+                        strokeWidth="24"
+                        strokeDasharray={seg.strokeDasharray}
+                        strokeDashoffset={seg.strokeDashoffset}
+                        strokeLinecap="round"
+                        className="donut-circle-slice"
                       />
-                      {statusName}
+                    ))}
+                  </g>
+                  {/* Center Text */}
+                  <text
+                    x="100"
+                    y="94"
+                    textAnchor="middle"
+                    className="donut-center-val"
+                  >
+                    {totalStatusCount.toLocaleString()}
+                  </text>
+                  <text
+                    x="100"
+                    y="114"
+                    textAnchor="middle"
+                    className="donut-center-sub"
+                  >
+                    TOTAL JOBS
+                  </text>
+                </svg>
+              </div>
+
+              {/* Status Legend & Metrics */}
+              <div className="donut-legend-list">
+                {donutSegments.map((seg) => (
+                  <div className="donut-legend-item" key={seg.key}>
+                    <div className="legend-label-group">
+                      <span
+                        className="legend-dot"
+                        style={{ backgroundColor: seg.color }}
+                      />
+                      <span className="legend-title">{seg.key}</span>
                     </div>
-                    <div className="status-count">{count}</div>
-                    <div className="status-label">Total Notifications</div>
+                    <div className="legend-val-group">
+                      <span className="legend-count">{seg.count.toLocaleString()}</span>
+                      <span
+                        className="legend-pct-pill"
+                        style={{
+                          backgroundColor: `${seg.color}18`,
+                          color: seg.color
+                        }}
+                      >
+                        {seg.percent}%
+                      </span>
+                    </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
-        </section>
+        </div>
+      </section>
 
-        {/* ── 5. FULL-WIDTH TABLE: TOP 10 SAVED JOBS ── */}
-        <section className="pro-card-panel">
-          <div className="panel-header">
-            <div className="panel-title-group">
-              <Bookmark size={18} color="#8b5cf6" />
-              <h3>Top 10 Most-Saved Jobs</h3>
+      {/* ── 5. FULL-WIDTH TABLE: TOP 10 MOST-SAVED JOBS ── */}
+      <section className="pro-chart-card">
+        <div className="chart-header">
+          <div className="chart-header-left">
+            <div className="chart-badge-icon purple-badge">
+              <Award size={17} color="#7c3aed" />
             </div>
-            <span className="panel-badge">Popular Among Candidates</span>
+            <div>
+              <h3 className="chart-title">Top 10 Most-Saved Jobs</h3>
+              <p className="chart-desc">Candidate interest and highest engagement notifications</p>
+            </div>
           </div>
+          <span className="count-pill">Ranked by Saves</span>
+        </div>
 
+        <div className="chart-body" style={{ padding: "0" }}>
           {loading ? (
-            <div className="panel-loading-state">
-              <RefreshCw size={24} className="spin-icon" color="#8b5cf6" />
-              <p>Loading candidate bookmark rankings...</p>
+            <div className="chart-loading-state" style={{ padding: "40px" }}>
+              <RefreshCw size={22} className="spin-icon" color="#7c3aed" />
+              <span>Loading saved bookmark rankings...</span>
             </div>
           ) : topSavedJobs.length === 0 ? (
-            <div className="panel-empty-state">
-              <p>No saved job bookmarks found in the database yet.</p>
-            </div>
+            <div className="chart-empty-state">No saved jobs bookmarks recorded yet.</div>
           ) : (
-            <div className="table-responsive-wrapper">
-              <table className="analytics-table">
+            <div className="table-responsive-container">
+              <table className="admin-analytics-table">
                 <thead>
                   <tr>
                     <th style={{ width: "90px" }}>Rank</th>
-                    <th>Job Title</th>
-                    <th style={{ width: "160px", textAlign: "right" }}>Saved Count</th>
+                    <th>Notification Title</th>
+                    <th style={{ width: "160px", textAlign: "right" }}>Total Saves</th>
                   </tr>
                 </thead>
                 <tbody>
                   {topSavedJobs.map((job, idx) => {
                     const rank = idx + 1;
                     return (
-                      <tr key={job.jobId || idx} className="table-row">
+                      <tr key={job.jobId || idx} className="table-row-hover">
                         <td>
                           <span
-                            className={`rank-badge ${
+                            className={`rank-pill ${
                               rank === 1
-                                ? "rank-gold"
+                                ? "rank-1"
                                 : rank === 2
-                                ? "rank-silver"
+                                ? "rank-2"
                                 : rank === 3
-                                ? "rank-bronze"
-                                : "rank-default"
+                                ? "rank-3"
+                                : "rank-n"
                             }`}
                           >
                             #{rank}
                           </span>
                         </td>
                         <td>
-                          <div className="job-title-cell">
-                            <span className="job-title-text">
+                          <div className="job-title-stack">
+                            <span className="job-main-title">
                               {job.jobTitle || "Government Job Notification"}
                             </span>
                             {job.jobId && (
-                              <span className="job-id-pill">ID: {job.jobId}</span>
+                              <span className="job-id-tag">ID: {job.jobId}</span>
                             )}
                           </div>
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          <span className="saved-count-pill">
-                            <Bookmark size={12} color="#8b5cf6" />
-                            <strong>{job.savedCount}</strong> saves
+                          <span className="saved-metric-pill">
+                            <Bookmark size={13} color="#7c3aed" />
+                            <strong>{(job.savedCount || 0).toLocaleString()}</strong>
                           </span>
                         </td>
                       </tr>
@@ -487,401 +585,491 @@ export default function AdminAnalytics({ onBack }) {
               </table>
             </div>
           )}
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-const ANALYTICS_CSS = `
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  .pro-analytics-root {
-    width: 100%;
-    min-height: 100vh;
-    background-color: #f8fafc;
-    color: #0f172a;
-    padding: 32px 24px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .analytics-container {
-    width: 100%;
-    max-width: 1240px;
+const ANALYTICS_STYLES = `
+  /* CSS Reset for Module */
+  .analytics-module-root {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    width: 100%;
+    color: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
-  /* Header */
-  .analytics-header {
+  /* ---------------- HEADER CARD ---------------- */
+  .analytics-header-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
     flex-wrap: wrap;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 24px 28px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
 
-  .header-badge {
+  .header-top-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .admin-chip {
+    font-size: 11px;
+    font-weight: 800;
+    color: #2563eb;
+    letter-spacing: 0.8px;
+  }
+
+  .back-link-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #dbeafe;
-    color: #1d4ed8;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    margin-bottom: 8px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
   }
 
-  .header-titles h1 {
+  .back-link-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .header-title {
     font-size: 24px;
     font-weight: 800;
     color: #0f172a;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.3px;
     margin-bottom: 4px;
   }
 
-  .header-titles p {
+  .header-subtitle {
     font-size: 13.5px;
     color: #64748b;
   }
 
-  .header-actions {
+  .header-controls {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
   }
 
-  .last-updated-text {
+  .timestamp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 7px 12px;
+    border-radius: 8px;
     font-size: 12px;
     color: #64748b;
-    background: #f1f5f9;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
   }
 
-  .last-updated-text strong {
+  .timestamp-badge strong {
     color: #0f172a;
   }
 
-  .refresh-btn {
+  .refresh-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background: #2563eb;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s, transform 0.1s;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
-  }
-
-  .refresh-btn:hover:not(:disabled) {
-    background: #1d4ed8;
-  }
-
-  .refresh-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .back-btn {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 9px 16px;
+    padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
   }
 
-  .back-btn:hover {
-    background: #e2e8f0;
-    color: #0f172a;
+  .refresh-action-btn:hover:not(:disabled) {
+    background: #1d4ed8;
   }
 
-  .analytics-alert-banner {
+  .refresh-action-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .analytics-error-banner {
     background: #fef2f2;
     border: 1px solid #fecaca;
     color: #991b1b;
     padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 13px;
+    border-radius: 10px;
+    font-size: 13.5px;
     font-weight: 500;
   }
 
-  /* KPI Grid */
-  .pro-kpi-grid {
+  /* ---------------- KPI ROW ---------------- */
+  .analytics-kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 18px;
   }
 
-  .pro-kpi-card {
-    background-color: #ffffff;
+  .analytics-kpi-card {
+    background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .pro-kpi-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  .analytics-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
   }
 
-  .kpi-header {
+  .kpi-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
-  .kpi-ico-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
+  .kpi-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .kpi-ico-box.blue { background: #dbeafe; }
-  .kpi-ico-box.green { background: #dcfce7; }
-  .kpi-ico-box.purple { background: #f3e8ff; }
-  .kpi-ico-box.orange { background: #ffedd5; }
+  .icon-blue { background: #eff6ff; border: 1px solid #dbeafe; }
+  .icon-green { background: #f0fdf4; border: 1px solid #dcfce7; }
+  .icon-purple { background: #f5f3ff; border: 1px solid #ede9fe; }
+  .icon-orange { background: #fff7ed; border: 1px solid #ffedd5; }
 
-  .trend-ico.blue { color: #2563eb; }
-  .trend-ico.green { color: #10b981; }
-  .trend-ico.purple { color: #8b5cf6; }
-  .trend-ico.orange { color: #f97316; }
+  .kpi-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
 
-  .kpi-content h2 {
+  .blue-tag { background: #eff6ff; color: #2563eb; }
+  .green-tag { background: #f0fdf4; color: #16a34a; }
+  .purple-tag { background: #f5f3ff; color: #7c3aed; }
+  .orange-tag { background: #fff7ed; color: #ea580c; }
+
+  .kpi-num {
     font-size: 28px;
     font-weight: 800;
     color: #0f172a;
-    margin: 0 0 2px;
     line-height: 1;
+    margin-bottom: 4px;
   }
 
-  .kpi-title {
+  .kpi-label {
     font-size: 13px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-right: 6px;
+    font-weight: 600;
+    color: #475569;
   }
 
   .kpi-sub {
-    font-size: 11px;
-    color: #64748b;
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 4px;
   }
 
   .kpi-skeleton {
     display: inline-block;
-    width: 60px;
+    width: 65px;
     height: 28px;
     background: #e2e8f0;
     border-radius: 6px;
     animation: pulse 1.5s ease-in-out infinite;
-    margin-bottom: 2px;
   }
 
-  /* Two-column layout */
-  .analytics-two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-
-  /* Pro Card Panel */
-  .pro-card-panel {
-    background-color: #ffffff;
+  /* ---------------- PRO CHART CARD ---------------- */
+  .pro-chart-card {
+    background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .panel-header {
+  .pro-chart-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .chart-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
   }
 
-  .panel-title-group {
+  .chart-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .panel-title-group h3 {
-    font-size: 16px;
-    font-weight: 800;
+  .chart-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .blue-badge { background: #eff6ff; }
+  .green-badge { background: #f0fdf4; }
+  .orange-badge { background: #fff7ed; }
+  .purple-badge { background: #f5f3ff; }
+
+  .chart-title {
+    font-size: 15.5px;
+    font-weight: 700;
     color: #0f172a;
-    margin: 0;
+    line-height: 1.2;
   }
 
-  .panel-badge {
+  .chart-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  .count-pill {
     font-size: 11.5px;
     font-weight: 700;
-    background: #f1f5f9;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     color: #475569;
     padding: 4px 10px;
     border-radius: 6px;
   }
 
-  .panel-loading-state {
+  .chart-body {
+    padding: 24px;
+  }
+
+  .chart-loading-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 40px 16px;
+    gap: 10px;
+    padding: 36px 16px;
     color: #64748b;
     font-size: 13px;
   }
 
-  .panel-empty-state {
-    padding: 36px 16px;
+  .chart-empty-state {
     text-align: center;
     color: #94a3b8;
+    padding: 36px 16px;
     font-size: 13px;
   }
 
-  /* Horizontal Bar Lists */
-  .bar-list {
+  /* ---------------- TWO-COLUMN BAR CHARTS ---------------- */
+  .analytics-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .bar-chart-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  .bar-row {
+  .bar-row-wrap {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 14px;
+    height: 28px;
   }
 
-  .bar-label-group {
+  .bar-label-col {
+    width: 130px;
+    flex-shrink: 0;
+  }
+
+  .bar-label-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bar-track-col {
+    flex: 1;
+    height: 28px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill-bar {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.6s ease;
+  }
+
+  .bar-blue-gradient {
+    background: linear-gradient(90deg, #2563eb, #38bdf8);
+  }
+
+  .bar-green-gradient {
+    background: linear-gradient(90deg, #10b981, #34d399);
+  }
+
+  .bar-count-col {
+    width: 60px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-count-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  /* ---------------- DONUT CHART (JOBS BY STATUS) ---------------- */
+  .donut-chart-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .donut-visual-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .donut-svg {
+    width: 190px;
+    height: 190px;
+  }
+
+  .donut-circle-slice {
+    transition: stroke-dasharray 0.6s ease, stroke 0.3s ease;
+  }
+
+  .donut-center-val {
+    font-size: 24px;
+    font-weight: 800;
+    fill: #0f172a;
+  }
+
+  .donut-center-sub {
+    font-size: 10px;
+    font-weight: 700;
+    fill: #94a3b8;
+    letter-spacing: 0.8px;
+  }
+
+  .donut-legend-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+
+  .donut-legend-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 13px;
   }
 
-  .bar-name {
+  .legend-label-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-title {
+    font-size: 13px;
     font-weight: 600;
     color: #0f172a;
   }
 
-  .bar-val {
-    font-weight: 700;
-    color: #64748b;
-    font-size: 12px;
-  }
-
-  .bar-track {
-    width: 100%;
-    height: 8px;
-    background: #f1f5f9;
-    border-radius: 999px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.4s ease-out;
-  }
-
-  .blue-fill { background: #2563eb; }
-  .green-fill { background: #10b981; }
-
-  /* Status Grid */
-  .status-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-  }
-
-  .status-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
+  .legend-val-group {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
   }
 
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  .legend-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .legend-pct-pill {
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
-    width: fit-content;
-    letter-spacing: 0.4px;
+    padding: 2px 7px;
+    border-radius: 9999px;
   }
 
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  .status-count {
-    font-size: 26px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1;
-  }
-
-  .status-label {
-    font-size: 11px;
-    color: #64748b;
-  }
-
-  /* Table styling */
-  .table-responsive-wrapper {
+  /* ---------------- TOP 10 SAVED JOBS TABLE ---------------- */
+  .table-responsive-container {
     width: 100%;
     overflow-x: auto;
   }
 
-  .analytics-table {
+  .admin-analytics-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13.5px;
     text-align: left;
   }
 
-  .analytics-table th {
-    padding: 12px 16px;
+  .admin-analytics-table th {
+    padding: 12px 24px;
     background: #f8fafc;
     color: #64748b;
     font-size: 11.5px;
@@ -891,44 +1079,44 @@ const ANALYTICS_CSS = `
     border-bottom: 1px solid #e2e8f0;
   }
 
-  .analytics-table td {
-    padding: 14px 16px;
+  .admin-analytics-table td {
+    padding: 14px 24px;
     border-bottom: 1px solid #f1f5f9;
     color: #0f172a;
     vertical-align: middle;
   }
 
-  .table-row:hover {
+  .table-row-hover:hover {
     background-color: #f8fafc;
   }
 
-  .rank-badge {
+  .rank-pill {
     display: inline-block;
-    padding: 4px 9px;
+    padding: 4px 10px;
     border-radius: 6px;
     font-weight: 800;
     font-size: 11.5px;
     text-align: center;
   }
 
-  .rank-gold { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-  .rank-silver { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-  .rank-bronze { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
-  .rank-default { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+  .rank-1 { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+  .rank-2 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .rank-3 { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+  .rank-n { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
 
-  .job-title-cell {
+  .job-title-stack {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
   }
 
-  .job-title-text {
+  .job-main-title {
     font-weight: 600;
     color: #0f172a;
   }
 
-  .job-id-pill {
+  .job-id-tag {
     font-size: 10.5px;
     color: #64748b;
     background: #f1f5f9;
@@ -937,22 +1125,22 @@ const ANALYTICS_CSS = `
     border: 1px solid #e2e8f0;
   }
 
-  .saved-count-pill {
+  .saved-metric-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #f3e8ff;
+    background: #f5f3ff;
     color: #7c3aed;
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 4px 12px;
+    border-radius: 9999px;
     font-size: 12.5px;
   }
 
-  .saved-count-pill strong {
+  .saved-metric-pill strong {
     font-weight: 800;
   }
 
-  /* Keyframe animations */
+  /* ---------------- ANIMATIONS ---------------- */
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
@@ -967,30 +1155,41 @@ const ANALYTICS_CSS = `
     animation: spin 1s linear infinite;
   }
 
-  /* Responsive breakpoints */
+  /* ---------------- RESPONSIVE BREAKPOINTS ---------------- */
   @media (max-width: 1024px) {
-    .pro-kpi-grid {
+    .analytics-kpi-row {
       grid-template-columns: repeat(2, 1fr);
     }
-    .analytics-two-col {
+    .analytics-charts-grid {
       grid-template-columns: 1fr;
+    }
+    .donut-chart-layout {
+      grid-template-columns: 1fr;
+      justify-items: center;
     }
   }
 
   @media (max-width: 640px) {
-    .pro-analytics-root {
-      padding: 16px 12px;
-    }
-    .pro-kpi-grid {
+    .analytics-kpi-row {
       grid-template-columns: 1fr;
     }
-    .analytics-header {
+    .analytics-header-card {
       padding: 16px;
       flex-direction: column;
       align-items: stretch;
     }
-    .header-actions {
+    .header-controls {
       justify-content: space-between;
+    }
+    .bar-row-wrap {
+      gap: 8px;
+    }
+    .bar-label-col {
+      width: 100px;
+    }
+    .admin-analytics-table th,
+    .admin-analytics-table td {
+      padding: 10px 14px;
     }
   }
 `;

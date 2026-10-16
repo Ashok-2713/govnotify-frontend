@@ -28,9 +28,11 @@ import {
   Filter,
   Check,
   Sparkles,
-  Menu
+  Menu,
+  BarChart3
 } from "lucide-react";
 import UsersAndActivity from "./UsersAndActivity";
+import AdminAnalytics from "./AdminAnalytics";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -502,6 +504,14 @@ function AdminDashboard({ adminEmail = "admin@govnotify.in", onLogout }) {
           </button>
 
           <button
+            className={`nav-item ${activeNav === "analytics" ? "active" : ""}`}
+            onClick={() => { setActiveNav("analytics"); setMobileMenuOpen(false); }}
+          >
+            <BarChart3 size={18} />
+            <span>Analytics</span>
+          </button>
+
+          <button
             className={`nav-item ${activeNav === "settings" ? "active" : ""}`}
             onClick={() => { setActiveNav("settings"); setMobileMenuOpen(false); }}
           >
@@ -580,6 +590,8 @@ function AdminDashboard({ adminEmail = "admin@govnotify.in", onLogout }) {
         <main className="gov-admin-content">
           {activeNav === "users" ? (
             <UsersAndActivity adminEmail={adminEmail} />
+          ) : activeNav === "analytics" ? (
+            <AdminAnalytics onBack={() => setActiveNav("dashboard")} />
           ) : (
             <>
               {/* Main Module Header */}
