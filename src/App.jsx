@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import AdminDashboard from "./AdminDashboard";
+import AdminAnalytics from './AdminAnalytics';
 import UserDashboard from "./UserDashboard";
 import ProfilePage from "./ProfilePage";
 import EligibilityChecker from "./EligibilityChecker";
@@ -53,10 +54,9 @@ function App() {
   const [showExamCalendar, setShowExamCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showAdminAnalytics, setShowAdminAnalytics] = useState(false);
   const [eligibilityFilter, setEligibilityFilter] = useState(null);
-  // State variable to track password visibility in the Login modal
   const [showPassword, setShowPassword] = useState(false);
-  // Ref and state for Google Identity Services button container & instant skeleton placeholder
   const googleBtnContainerRef = useRef(null);
   const [isGoogleBtnRendered, setIsGoogleBtnRendered] = useState(false);
 
@@ -69,7 +69,6 @@ function App() {
     const container = googleBtnContainerRef.current;
     if (!container) return;
 
-    // Check if Google button iframe or DOM node has already been created
     const hasGoogleElement = () =>
       !!container.querySelector("iframe, div[role='button'], div[id^='g_id_signin']");
 
@@ -87,7 +86,6 @@ function App() {
 
     observer.observe(container, { childList: true, subtree: true });
 
-    // Fallback timer to ensure placeholder smoothly transitions if script was cached
     const fallbackTimer = setTimeout(() => {
       if (hasGoogleElement()) {
         setIsGoogleBtnRendered(true);
@@ -204,7 +202,6 @@ function App() {
   if (isUser) {
     let userView = null;
 
-    // Show Settings Page
     if (showSettings) {
       userView = (
         <Settings
@@ -225,6 +222,12 @@ function App() {
             setShowHelp(false);
             setShowEligibility(true);
           }}
+        />
+      );
+    } else if (showAdminAnalytics) {
+      userView = (
+        <AdminAnalytics
+          onBack={() => setShowAdminAnalytics(false)}
         />
       );
     } else if (showExamCalendar) {
@@ -305,6 +308,7 @@ function App() {
             setShowExamCalendar(false);
             setShowSettings(false);
             setShowHelp(false);
+            setShowAdminAnalytics(false);
           }}
           onProfileClick={() => {
             setEligibilityFilter(null);
@@ -318,6 +322,7 @@ function App() {
           onExamCalendarClick={() => setShowExamCalendar(true)}
           onSettingsClick={() => setShowSettings(true)}
           onHelpClick={() => setShowHelp(true)}
+          onAdminAnalyticsClick={() => setShowAdminAnalytics(true)}
         />
       );
     }
@@ -334,7 +339,6 @@ function App() {
     <div className="landing-root">
       <style>{styles}</style>
 
-      {/* Navbar */}
       <nav className="navbar">
         <div className="brand">
           <div className="brand-icon-box">
@@ -355,7 +359,6 @@ function App() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="hero" id="home">
         <div className="hero-text">
           <div className="hero-tag">
@@ -409,7 +412,6 @@ function App() {
         </div>
       </section>
 
-      {/* Highlights */}
       <div className="highlights-strip">
         <div className="highlight-card">
           <div className="hl-icon green"><ShieldCheck size={22} /></div>
@@ -429,7 +431,6 @@ function App() {
         </div>
       </div>
 
-      {/* Features */}
       <section className="section" id="features">
         <h2 className="section-title">Why Choose <span className="text-emerald">GovNotify?</span></h2>
         <p className="section-description">A single, streamlined portal to search, save, track, and apply for suitable government job opportunities.</p>
@@ -444,7 +445,6 @@ function App() {
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="section how-it-works" id="how-it-works">
         <h2 className="section-title">How It <span className="text-emerald">Works</span></h2>
         <p className="section-description">Start finding relevant government job opportunities in three simple steps.</p>
@@ -459,7 +459,6 @@ function App() {
         </div>
       </section>
 
-      {/* About */}
       <section className="section about" id="about">
         <div className="about-img-container">
           <img src="https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=1200&q=85" alt="Student preparing for exam" />
@@ -479,14 +478,12 @@ function App() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="cta">
         <h2>Ready to Find Your Government Job?</h2>
         <p>Create your free GovNotify account and never miss an official notification.</p>
         <button onClick={() => openModal("register")}>Create Account Now</button>
       </section>
 
-      {/* Footer */}
       <footer>
         <div className="footer-brand">
           <Landmark size={20} className="text-emerald" />
@@ -495,7 +492,6 @@ function App() {
         <div>© 2026 GovNotify. Academic Project. All rights reserved.</div>
       </footer>
 
-      {/* LOGIN MODAL */}
       {modal === "login" && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-container-2col" onClick={(event) => event.stopPropagation()}>
@@ -547,14 +543,12 @@ function App() {
                   <label>Password</label>
                   <div className="input-field-wrapper">
                     <Lock size={18} className="field-icon" />
-                    {/* Dynamic password input type: switches between text and password */}
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       required
                     />
-                    {/* Functional password visibility toggle with visual feedback */}
                     {showPassword ? (
                       <EyeOff
                         size={18}
@@ -582,10 +576,8 @@ function App() {
                 <button type="submit" className="login-submit-btn"><ArrowRight size={18} /> Login</button>
                 {loginMessage && <p className="form-message-box">{loginMessage}</p>}
               </form>
-              {/* "or continue with" divider displayed above the Google button placeholder */}
               <div className="divider-row"><span>or continue with</span></div>
 
-              {/* Fixed height container (min-height: 40px) to prevent layout jumping */}
               <div
                 ref={googleBtnContainerRef}
                 style={{
@@ -599,7 +591,6 @@ function App() {
                   marginBottom: "20px"
                 }}
               >
-                {/* Instant grey rounded loading skeleton placeholder */}
                 {!isGoogleBtnRendered && (
                   <div
                     className="google-skeleton-placeholder"
@@ -635,7 +626,6 @@ function App() {
                   </div>
                 )}
 
-                {/* Google OAuth Login component */}
                 <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
@@ -656,7 +646,6 @@ function App() {
         </div>
       )}
 
-      {/* REGISTER MODAL */}
       {modal === "register" && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-container-2col" onClick={(event) => event.stopPropagation()}>
@@ -727,7 +716,6 @@ function App() {
         </div>
       )}
 
-      {/* FORGOT PASSWORD MODAL (MULTI-STEP OTP FLOW) */}
       {modal === "forgot-password" && (
         <ForgotPasswordModal
           onClose={() => setModal(null)}
