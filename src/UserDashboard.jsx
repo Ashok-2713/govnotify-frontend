@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Bell, Calendar, Bookmark, FileText, User, CheckCircle2, Settings,
   HelpCircle, Search, ChevronRight, Briefcase, Send, TrendingUp, Clock, ArrowRight,
   Award, ExternalLink, X, Menu, ChevronDown, ShieldCheck, Building2,
-  Globe, Landmark, Building, BarChart3, LogOut, Sparkles, RefreshCw,
+  Globe, Landmark, Building, LogOut, Sparkles, RefreshCw,
   ClipboardCheck, Bot
 } from "lucide-react";
 
@@ -146,7 +146,7 @@ export default function UserDashboard({
   onExamCalendarClick,
   onSettingsClick,
   onHelpClick,
-  onAdminAnalyticsClick,
+
   appliedEligibilityFilter = null,
   onClearEligibilityFilter
 }) {
@@ -650,10 +650,7 @@ export default function UserDashboard({
           <button className={`pro-nav-link ${activeTab === "calendar" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onExamCalendarClick && onExamCalendarClick(); }}>
             <Calendar size={18} /><span>Exam Calendar</span>
           </button>
-          {/* ⭐ ADMIN ANALYTICS — New module page */}
-          <button className={`pro-nav-link ${activeTab === "analytics" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onAdminAnalyticsClick && onAdminAnalyticsClick(); }}>
-            <BarChart3 size={18} /><span>Admin Analytics</span>
-          </button>
+
           <button className={`pro-nav-link ${activeTab === "profile" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onProfileClick && onProfileClick(); }}>
             <User size={18} /><span>Profile</span>
           </button>

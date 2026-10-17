@@ -54,7 +54,7 @@ function App() {
   const [showExamCalendar, setShowExamCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [showAdminAnalytics, setShowAdminAnalytics] = useState(false);
+
   const [eligibilityFilter, setEligibilityFilter] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const googleBtnContainerRef = useRef(null);
@@ -224,12 +224,7 @@ function App() {
           }}
         />
       );
-    } else if (showAdminAnalytics) {
-      userView = (
-        <AdminAnalytics
-          onBack={() => setShowAdminAnalytics(false)}
-        />
-      );
+
     } else if (showExamCalendar) {
       userView = (
         <ExamCalendar
@@ -322,7 +317,7 @@ function App() {
           onExamCalendarClick={() => setShowExamCalendar(true)}
           onSettingsClick={() => setShowSettings(true)}
           onHelpClick={() => setShowHelp(true)}
-          onAdminAnalyticsClick={() => setShowAdminAnalytics(true)}
+
         />
       );
     }
