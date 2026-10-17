@@ -137,6 +137,32 @@ export default function AppliedJobs({
       .catch(err => console.error("Error unmarking job:", err));
   };
 
+  // Update status of an applied job (optimistic UI — no page refresh)
+  const handleUpdateStatus = (id, newStatus) => {
+    setAppliedJobs(prev =>
+      prev.map(j => j.id === id ? { ...j, status: newStatus } : j)
+    );
+    fetch(`${API_BASE}/api/applied-jobs/${id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    }).catch(err => {
+      console.error("Error updating status:", err);
+      // Revert on failure
+      loadAppliedJobs();
+    });
+  };
+
+  // Return color style for a given status value
+  const getStatusStyle = (status) => {
+    switch ((status || "APPLIED").toUpperCase()) {
+      case "INTERVIEW":  return { borderColor: "#2563eb", color: "#2563eb", background: "#eff6ff" };
+      case "SELECTED":   return { borderColor: "#10b981", color: "#065f46", background: "#ecfdf5" };
+      case "REJECTED":   return { borderColor: "#ef4444", color: "#991b1b", background: "#fef2f2" };
+      default:           return { borderColor: "#94a3b8", color: "#475569", background: "#f8fafc" };
+    }
+  };
+
   // Mark job as applied
   const handleMarkAsApplied = (job) => {
     if (!job) return;
@@ -432,6 +458,36 @@ export default function AppliedJobs({
                     </div>
 
                     <div style={styles.actionRow} className="app-action-row">
+                      {/* Status Dropdown */}
+                      <select
+                        value={job.status || "APPLIED"}
+                        onChange={e => handleUpdateStatus(job.id, e.target.value)}
+                        title="Update application status"
+                        style={{
+                          ...getStatusStyle(job.status),
+                          border: `1.5px solid ${getStatusStyle(job.status).borderColor}`,
+                          borderRadius: "8px",
+                          padding: "5px 10px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          cursor: "pointer",
+                          outline: "none",
+                          appearance: "none",
+                          WebkitAppearance: "none",
+                          minWidth: "120px",
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 8px center",
+                          paddingRight: "26px",
+                          transition: "border-color 0.2s"
+                        }}
+                      >
+                        <option value="APPLIED">📋 Applied</option>
+                        <option value="INTERVIEW">🎯 Interview</option>
+                        <option value="SELECTED">✅ Selected</option>
+                        <option value="REJECTED">❌ Rejected</option>
+                      </select>
+
                       <a
                         href={job.officialApplyUrl || "#"}
                         target="_blank"

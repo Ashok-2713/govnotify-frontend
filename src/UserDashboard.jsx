@@ -495,6 +495,27 @@ export default function UserDashboard({
 
   const saveJob = handleSave;
 
+  // Apply Job: POST to /api/applied-jobs/apply and show toast
+  const handleApplyJob = (job) => {
+    if (!job) return;
+    const payload = {
+      userEmail: userEmail || "",
+      jobTitle: job.title || job.postTitle || "Government Job",
+      organization: job.organization || "Government Department",
+      lastDate: job.lastDate ? String(job.lastDate) : "N/A",
+      officialApplyUrl: job.officialApplyUrl || job.sourceUrl || "",
+      jobId: job.id ? String(job.id) : ""
+    };
+    fetch(`${API_BASE}/api/applied-jobs/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => showNotification(data.message || "✅ Job added to Application Tracker!", "success"))
+      .catch(() => showNotification("❌ Failed to add job. Please try again.", "error"));
+  };
+
   // Helper to extract user full name from localStorage or sessionStorage
   const resolveStoredName = () => {
     try {
@@ -915,6 +936,14 @@ export default function UserDashboard({
                           <div className="job-actions">
                             <button className="btn-save-sm" onClick={() => saveJob(job)} title="Save Job">
                               <Bookmark size={14} />
+                            </button>
+                            <button
+                              className="btn-save-sm"
+                              onClick={() => handleApplyJob(job)}
+                              title="Add to Application Tracker"
+                              style={{ color: "#10b981" }}
+                            >
+                              <Send size={14} />
                             </button>
                             <button className="btn-view-sm" onClick={() => setSelectedJobDetail(job)} title="View Job Details">
                               View <ChevronRight size={14} />
