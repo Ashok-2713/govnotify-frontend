@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import JobReviews from "./JobReviews";
 import {
   LayoutDashboard, Bell, Calendar, Bookmark, FileText, User, CheckCircle2, Settings,
   HelpCircle, Search, ChevronRight, Briefcase, Send, TrendingUp, Clock, ArrowRight,
@@ -1103,7 +1104,7 @@ export default function UserDashboard({
       {/* ── JOB DETAIL MODAL ── */}
       {selectedJobDetail && (
         <div className="gn-modal-overlay" onClick={() => setSelectedJobDetail(null)}>
-          <div className="gn-modal-card" onClick={e => e.stopPropagation()}>
+          <div className="gn-modal-card" onClick={e => e.stopPropagation()} style={{ overflowY: "auto", maxHeight: "90vh" }}>
             <button className="gn-modal-close" onClick={() => setSelectedJobDetail(null)} title="Close Modal">
               <X size={20} />
             </button>
@@ -1133,6 +1134,15 @@ export default function UserDashboard({
                 Apply on Official Portal <ExternalLink size={16} />
               </a>
             </div>
+
+            {/* ── REVIEWS & RATINGS ── */}
+            {selectedJobDetail.id && (
+              <JobReviews
+                jobId={selectedJobDetail.id}
+                jobTitle={selectedJobDetail.title}
+                userEmail={userEmail}
+              />
+            )}
           </div>
         </div>
       )}
