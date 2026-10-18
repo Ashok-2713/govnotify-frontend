@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import JobReviews from "./JobReviews";
 import {
   LayoutDashboard, Bell, Calendar, Bookmark, FileText, User, CheckCircle2, Settings,
   HelpCircle, Search, ChevronRight, Briefcase, Send, TrendingUp, Clock, ArrowRight,
   Award, ExternalLink, X, Menu, ChevronDown, ShieldCheck, Building2,
   Globe, Landmark, Building, LogOut, Sparkles, RefreshCw,
-  ClipboardCheck, Bot
+  ClipboardCheck, Bot, MessageSquare, Star
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -147,6 +146,8 @@ export default function UserDashboard({
   onExamCalendarClick,
   onSettingsClick,
   onHelpClick,
+  onViewReviewsClick,
+  onReviewsClick,
 
   appliedEligibilityFilter = null,
   onClearEligibilityFilter
@@ -672,6 +673,9 @@ export default function UserDashboard({
           <button className={`pro-nav-link ${activeTab === "calendar" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onExamCalendarClick && onExamCalendarClick(); }}>
             <Calendar size={18} /><span>Exam Calendar</span>
           </button>
+          <button className={`pro-nav-link ${activeTab === "reviews" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onReviewsClick && onReviewsClick(); }}>
+            <Star size={18} /><span>Reviews</span>
+          </button>
 
           <button className={`pro-nav-link ${activeTab === "profile" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onProfileClick && onProfileClick(); }}>
             <User size={18} /><span>Profile</span>
@@ -1104,7 +1108,7 @@ export default function UserDashboard({
       {/* ── JOB DETAIL MODAL ── */}
       {selectedJobDetail && (
         <div className="gn-modal-overlay" onClick={() => setSelectedJobDetail(null)}>
-          <div className="gn-modal-card" onClick={e => e.stopPropagation()} style={{ overflowY: "auto", maxHeight: "90vh" }}>
+          <div className="gn-modal-card" onClick={e => e.stopPropagation()}>
             <button className="gn-modal-close" onClick={() => setSelectedJobDetail(null)} title="Close Modal">
               <X size={20} />
             </button>
@@ -1121,7 +1125,7 @@ export default function UserDashboard({
               <div className="detail-row"><span>Application Last Date</span><strong className="red-text">{fmtDate(selectedJobDetail.lastDate)}</strong></div>
             </div>
 
-            <div className="gn-modal-actions" style={{ display: 'flex', gap: '10px' }}>
+            <div className="gn-modal-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => saveJob(selectedJobDetail)}
@@ -1130,19 +1134,21 @@ export default function UserDashboard({
               >
                 <Bookmark size={16} /> Save Job
               </button>
+              <button
+                type="button"
+                className="gn-modal-btn"
+                style={{ background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                onClick={() => {
+                  if (onViewReviewsClick) onViewReviewsClick(selectedJobDetail);
+                  setSelectedJobDetail(null);
+                }}
+              >
+                <MessageSquare size={16} /> View Reviews
+              </button>
               <a href={selectedJobDetail.officialApplyUrl || "#"} target="_blank" rel="noreferrer" className="gn-modal-btn">
                 Apply on Official Portal <ExternalLink size={16} />
               </a>
             </div>
-
-            {/* ── REVIEWS & RATINGS ── */}
-            {selectedJobDetail.id && (
-              <JobReviews
-                jobId={selectedJobDetail.id}
-                jobTitle={selectedJobDetail.title}
-                userEmail={userEmail}
-              />
-            )}
           </div>
         </div>
       )}

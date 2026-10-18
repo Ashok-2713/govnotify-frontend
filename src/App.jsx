@@ -13,6 +13,7 @@ import Settings from "./Settings";
 import HelpSupport from "./HelpSupport";
 import AIAssistant from "./AIAssistant";
 import ForgotPasswordModal from "./ForgotPasswordModal";
+import JobReviews from "./JobReviews";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   Shield, Search, Bell, CheckCircle2, Heart, FileText, Calendar, User, Lock, Eye, EyeOff,
@@ -54,6 +55,9 @@ function App() {
   const [showExamCalendar, setShowExamCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const [showJobReviews, setShowJobReviews] = useState(false);
+  const [reviewJobData, setReviewJobData] = useState(null);
 
   const [eligibilityFilter, setEligibilityFilter] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -276,6 +280,25 @@ function App() {
           }}
         />
       );
+    } else if (showReviews) {
+      userView = (
+        <JobReviews
+          userEmail={userEmail}
+          onBack={() => setShowReviews(false)}
+        />
+      );
+    } else if (showJobReviews && reviewJobData) {
+      userView = (
+        <JobReviews
+          jobId={reviewJobData.id}
+          jobTitle={reviewJobData.title}
+          userEmail={userEmail}
+          onBack={() => {
+            setShowJobReviews(false);
+            setReviewJobData(null);
+          }}
+        />
+      );
     } else if (currentPage === "profile") {
       userView = (
         <ProfilePage
@@ -303,7 +326,9 @@ function App() {
             setShowExamCalendar(false);
             setShowSettings(false);
             setShowHelp(false);
-            setShowAdminAnalytics(false);
+            setShowReviews(false);
+            setShowJobReviews(false);
+            setReviewJobData(null);
           }}
           onProfileClick={() => {
             setEligibilityFilter(null);
@@ -317,6 +342,11 @@ function App() {
           onExamCalendarClick={() => setShowExamCalendar(true)}
           onSettingsClick={() => setShowSettings(true)}
           onHelpClick={() => setShowHelp(true)}
+          onReviewsClick={() => setShowReviews(true)}
+          onViewReviewsClick={(job) => {
+            setReviewJobData(job);
+            setShowJobReviews(true);
+          }}
 
         />
       );
