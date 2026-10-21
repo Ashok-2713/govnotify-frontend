@@ -148,6 +148,7 @@ export default function UserDashboard({
   onHelpClick,
   onViewReviewsClick,
   onReviewsClick,
+  onAIRecommendationsClick,
 
   appliedEligibilityFilter = null,
   onClearEligibilityFilter
@@ -656,6 +657,9 @@ export default function UserDashboard({
         <nav className="pro-nav-menu">
           <button className={`pro-nav-link ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => { setActiveTab("dashboard"); setMobileMenuOpen(false); }}>
             <LayoutDashboard size={18} /><span>Dashboard</span>
+          </button>
+          <button className={`pro-nav-link ${activeTab === "ai-recommendations" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onAIRecommendationsClick && onAIRecommendationsClick(); }}>
+            <Sparkles size={18} /><span>AI Recommendations</span>
           </button>
           <button className={`pro-nav-link ${activeTab === "notifications" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onJobNotificationsClick && onJobNotificationsClick(); }}>
             <Bell size={18} /><span>Job Notifications</span>

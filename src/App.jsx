@@ -14,6 +14,7 @@ import HelpSupport from "./HelpSupport";
 import AIAssistant from "./AIAssistant";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import JobReviews from "./JobReviews";
+import AIRecommendations from "./AIRecommendations";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   Shield, Search, Bell, CheckCircle2, Heart, FileText, Calendar, User, Lock, Eye, EyeOff,
@@ -56,6 +57,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [showAIRecommendations, setShowAIRecommendations] = useState(false);
   const [showJobReviews, setShowJobReviews] = useState(false);
   const [reviewJobData, setReviewJobData] = useState(null);
 
@@ -280,6 +282,17 @@ function App() {
           }}
         />
       );
+    } else if (showAIRecommendations) {
+      userView = (
+        <AIRecommendations
+          userEmail={userEmail}
+          onBack={() => setShowAIRecommendations(false)}
+          onProfileClick={() => {
+            setShowAIRecommendations(false);
+            setCurrentPage("profile");
+          }}
+        />
+      );
     } else if (showReviews) {
       userView = (
         <JobReviews
@@ -327,6 +340,7 @@ function App() {
             setShowSettings(false);
             setShowHelp(false);
             setShowReviews(false);
+            setShowAIRecommendations(false);
             setShowJobReviews(false);
             setReviewJobData(null);
           }}
@@ -342,6 +356,7 @@ function App() {
           onExamCalendarClick={() => setShowExamCalendar(true)}
           onSettingsClick={() => setShowSettings(true)}
           onHelpClick={() => setShowHelp(true)}
+          onAIRecommendationsClick={() => setShowAIRecommendations(true)}
           onReviewsClick={() => setShowReviews(true)}
           onViewReviewsClick={(job) => {
             setReviewJobData(job);
