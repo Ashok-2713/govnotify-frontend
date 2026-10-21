@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const RAW_API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function maskEmail(email) {
@@ -9,6 +10,7 @@ function maskEmail(email) {
   if (!domain) return email;
   return `${local.slice(0, 2)}***@${domain}`;
 }
+
 function fmtDate(dateStr) {
   if (!dateStr) return "";
   if (Array.isArray(dateStr)) {
@@ -23,9 +25,11 @@ function fmtDate(dateStr) {
 // ── Read-only Stars ──────────────────────────────────────────────────────────
 function StarDisplay({ rating, size = 15 }) {
   return (
-    <span style={{ display: "inline-flex", gap: 2, lineHeight: 1 }}>
+    <span style={{ display: "inline-flex", gap: 3, lineHeight: 1, alignItems: "center" }}>
       {[1, 2, 3, 4, 5].map(s => (
-        <span key={s} style={{ fontSize: size, color: s <= rating ? "#f59e0b" : "#d1d5db", lineHeight: 1 }}>★</span>
+        <span key={s} style={{ fontSize: size, color: s <= rating ? "#f59e0b" : "#e2e8f0", lineHeight: 1 }}>
+          ★
+        </span>
       ))}
     </span>
   );
@@ -35,31 +39,42 @@ function StarDisplay({ rating, size = 15 }) {
 function StarSelector({ value, onChange }) {
   const [hov, setHov] = useState(0);
   return (
-    <span style={{ display: "inline-flex", gap: 8, lineHeight: 1 }}>
-      {[1, 2, 3, 4, 5].map(s => (
-        <span
-          key={s}
-          onClick={() => onChange(s)}
-          onMouseEnter={() => setHov(s)}
-          onMouseLeave={() => setHov(0)}
-          style={{
-            fontSize: 30,
-            color: s <= (hov || value) ? "#f59e0b" : "#cbd5e1",
-            cursor: "pointer",
-            transition: "color .12s, transform .1s",
-            userSelect: "none",
-            lineHeight: 1,
-            display: "inline-block",
-            transform: s <= (hov || value) ? "scale(1.15)" : "scale(1)"
-          }}
-        >★</span>
-      ))}
-    </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ display: "inline-flex", gap: 6, lineHeight: 1 }}>
+        {[1, 2, 3, 4, 5].map(s => (
+          <button
+            type="button"
+            key={s}
+            onClick={() => onChange(s)}
+            onMouseEnter={() => setHov(s)}
+            onMouseLeave={() => setHov(0)}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              fontSize: 28,
+              color: s <= (hov || value) ? "#f59e0b" : "#cbd5e1",
+              cursor: "pointer",
+              transition: "transform 0.12s ease, color 0.12s ease",
+              userSelect: "none",
+              lineHeight: 1,
+              transform: s <= (hov || value) ? "scale(1.18)" : "scale(1)",
+            }}
+            aria-label={`Rate ${s} star${s > 1 ? "s" : ""}`}
+          >
+            ★
+          </button>
+        ))}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: (hov || value) ? "#d97706" : "#94a3b8", marginLeft: 4 }}>
+        {(hov || value) ? `${hov || value} / 5 Stars` : "Select a rating"}
+      </span>
+    </div>
   );
 }
 
 // ── 3D Gold Star SVG ─────────────────────────────────────────────────────────
-function Star3D({ size = 82 }) {
+function Star3D({ size = 76 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
       style={{ flexShrink: 0, filter: "drop-shadow(0 8px 18px rgba(180,83,9,0.45))" }}>
@@ -81,7 +96,7 @@ function Star3D({ size = 82 }) {
 function BannerBuilding() {
   return (
     <svg width="120" height="105" viewBox="0 0 120 105" fill="none" xmlns="http://www.w3.org/2000/svg"
-      style={{ opacity: 0.14, position: "absolute", right: 0, bottom: 0, pointerEvents: "none" }}>
+      style={{ opacity: 0.12, position: "absolute", right: 0, bottom: 0, pointerEvents: "none" }}>
       <rect x="5" y="42" width="110" height="60" rx="2" fill="white" />
       <rect x="0" y="37" width="120" height="8" rx="2" fill="white" />
       <rect x="18" y="22" width="84" height="18" rx="2" fill="white" />
@@ -102,7 +117,7 @@ function BannerBuilding() {
 // ── Left Panel Person Illustration ───────────────────────────────────────────
 function PersonIllustration() {
   return (
-    <svg width="148" height="178" viewBox="0 0 140 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="144" height="172" viewBox="0 0 140 170" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="14" cy="125" rx="9" ry="18" fill="#34d399" transform="rotate(-20,14,125)" />
       <ellipse cx="24" cy="112" rx="8" ry="14" fill="#10b981" transform="rotate(12,24,112)" />
       <ellipse cx="8" cy="110" rx="7" ry="12" fill="#6ee7b7" transform="rotate(-30,8,110)" />
@@ -150,7 +165,7 @@ function PersonIllustration() {
 // ── Empty State Illustration ──────────────────────────────────────────────────
 function EmptyIllustration() {
   return (
-    <svg width="200" height="160" viewBox="0 0 190 155" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="190" height="150" viewBox="0 0 190 155" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="22" cy="108" rx="13" ry="22" fill="#34d399" transform="rotate(-22,22,108)" />
       <ellipse cx="34" cy="92" rx="11" ry="17" fill="#10b981" transform="rotate(14,34,92)" />
       <ellipse cx="12" cy="95" rx="9" ry="14" fill="#6ee7b7" transform="rotate(-32,12,95)" />
@@ -182,7 +197,7 @@ function EmptyIllustration() {
 // ── Left Panel Footer Building ────────────────────────────────────────────────
 function SmallBuilding() {
   return (
-    <svg width="40" height="40" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="2" y="14" width="32" height="20" rx="1" fill="#93c5fd" />
       <rect x="0" y="12" width="36" height="4" rx="1" fill="#60a5fa" />
       <rect x="6" y="6" width="24" height="8" rx="1" fill="#93c5fd" />
@@ -215,9 +230,19 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
     if (!hasJob) { setLoading(false); return; }
     setLoading(true);
     fetch(`${API_BASE}/api/reviews/${jobId}`)
-      .then(r => r.ok ? r.json() : [])
+      .then(async (r) => {
+        if (!r.ok) {
+          console.warn("Failed to retrieve reviews:", r.status, r.statusText);
+          return [];
+        }
+        return r.json();
+      })
       .then(d => { setReviews(Array.isArray(d) ? d : []); setLoading(false); })
-      .catch(() => { setReviews([]); setLoading(false); });
+      .catch((err) => {
+        console.error("Error fetching reviews:", err);
+        setReviews([]);
+        setLoading(false);
+      });
   }, [jobId, hasJob]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
@@ -234,13 +259,13 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
 
   const sortedReviews = [...reviews].sort((a, b) => {
     if (sortBy === "newest") {
-      const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1]-1, a.createdAt[2]) : new Date(a.createdAt);
-      const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1]-1, b.createdAt[2]) : new Date(b.createdAt);
+      const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1] - 1, a.createdAt[2]) : new Date(a.createdAt);
+      const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1] - 1, b.createdAt[2]) : new Date(b.createdAt);
       return db - da;
     }
     if (sortBy === "oldest") {
-      const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1]-1, a.createdAt[2]) : new Date(a.createdAt);
-      const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1]-1, b.createdAt[2]) : new Date(b.createdAt);
+      const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1] - 1, a.createdAt[2]) : new Date(a.createdAt);
+      const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1] - 1, b.createdAt[2]) : new Date(b.createdAt);
       return da - db;
     }
     if (sortBy === "highest") return (b.rating || 0) - (a.rating || 0);
@@ -250,134 +275,342 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
 
   const latestReview = reviews.length > 0
     ? [...reviews].sort((a, b) => {
-        const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1]-1, a.createdAt[2]) : new Date(a.createdAt);
-        const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1]-1, b.createdAt[2]) : new Date(b.createdAt);
+        const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1] - 1, a.createdAt[2]) : new Date(a.createdAt);
+        const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1] - 1, b.createdAt[2]) : new Date(b.createdAt);
         return db - da;
       })[0]
     : null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError(""); setSuccessMsg("");
-    if (!hasJob) { setFormError("Open a specific job from the dashboard to write a review."); return; }
-    if (!rating) { setFormError("Please select a star rating."); return; }
-    if (!reviewText.trim()) { setFormError("Please write a short review."); return; }
+    setFormError("");
+    setSuccessMsg("");
+
+    if (!hasJob) {
+      setFormError("Open a specific job from the dashboard to write a review.");
+      return;
+    }
+    if (!rating) {
+      setFormError("Please select a star rating.");
+      return;
+    }
+    if (!reviewText.trim()) {
+      setFormError("Please write a short review before submitting.");
+      return;
+    }
+
     setSubmitting(true);
-    fetch(`${API_BASE}/api/reviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId, userEmail: userEmail || "user@govnotify.in", rating, reviewText: reviewText.trim() })
-    })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(() => { setSuccessMsg("✅ Review submitted! Thank you."); setRating(0); setReviewText(""); fetchReviews(); })
-      .catch(() => setFormError("❌ Failed to submit. Please try again."))
-      .finally(() => setSubmitting(false));
+    const submitUrl = `${API_BASE}/api/reviews`;
+
+    try {
+      const response = await fetch(submitUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          jobId,
+          userEmail: userEmail || "user@govnotify.in",
+          rating,
+          reviewText: reviewText.trim()
+        })
+      });
+
+      if (!response.ok) {
+        let errMessage = "";
+        try {
+          const errorJson = await response.json();
+          errMessage = errorJson.message || JSON.stringify(errorJson);
+        } catch {
+          errMessage = await response.text();
+        }
+
+        console.error("Submit failed:", response.status, response.statusText, errMessage);
+
+        if (response.status === 404) {
+          setFormError("Endpoint not found (404). Please verify backend deployment.");
+        } else if (response.status === 500) {
+          setFormError("Server error (500). Please check backend database logs.");
+        } else {
+          setFormError(`Failed to submit (${response.status}): ${errMessage || response.statusText || "Please try again."}`);
+        }
+        return;
+      }
+
+      setSuccessMsg("✅ Review submitted! Thank you for helping others.");
+      setRating(0);
+      setReviewText("");
+      fetchReviews();
+    } catch (networkErr) {
+      console.error("Network error during review submission to", submitUrl, ":", networkErr);
+      setFormError("Network error: Backend might be starting up (Render free tier wakes up after ~50s). Please check your connection and retry.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f8fc", fontFamily: "'Inter', 'Outfit', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f8fc", fontFamily: "'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        .jr-back:hover { background: #f1f5f9 !important; box-shadow: 0 2px 8px rgba(37,99,235,.12) !important; }
-        .jr-submit:hover:not(:disabled) { background: linear-gradient(135deg,#059669,#10b981) !important; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,.4) !important; }
-        .jr-rcard { transition: border-color .2s, box-shadow .2s, transform .18s; }
-        .jr-rcard:hover { border-color: #bfdbfe !important; box-shadow: 0 4px 18px rgba(37,99,235,.12) !important; transform: translateY(-1px); }
-        .jr-sort { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 5px 26px 5px 10px; font-size: 12px; font-family: inherit; color: #374151; background: #f8fafc; cursor: pointer; appearance: none; -webkit-appearance: none; }
-        .jr-sort:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
-        .jr-sort-wrap { position: relative; display: inline-flex; align-items: center; }
-        .jr-sort-wrap::after { content: "▾"; position: absolute; right: 9px; font-size: 11px; color: #94a3b8; pointer-events: none; }
-        .jr-textarea:focus { border-color: #10b981 !important; outline: none; box-shadow: 0 0 0 3px rgba(16,185,129,.15) !important; }
-        @keyframes jr-spin { to { transform: rotate(360deg); } }
-        .jr-spinner { animation: jr-spin .75s linear infinite; }
-        .jr-bar-fill { transition: width .65s cubic-bezier(.4,0,.2,1); }
-        .jr-dash-btn:hover { background: #1d4ed8 !important; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,.35) !important; }
-        .jr-dash-btn { transition: background .18s, transform .15s, box-shadow .18s; }
-        @media (max-width: 880px) { .jr-left { display: none !important; } .jr-grid { grid-template-columns: 1fr !important; } .jr-banner-deco { display: none !important; } }
-        @media (max-width: 560px) { .jr-main { padding: 10px !important; } .jr-banner { padding: 14px 14px !important; gap: 10px !important; } }
+        
+        .jr-back:hover {
+          background: #ffffff !important;
+          color: #1d4ed8 !important;
+          box-shadow: 0 3px 10px rgba(37,99,235,.15) !important;
+          transform: translateX(-2px);
+        }
+        .jr-submit:hover:not(:disabled) {
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16,185,129,.35) !important;
+        }
+        .jr-rcard {
+          transition: border-color .2s, box-shadow .2s, transform .16s;
+        }
+        .jr-rcard:hover {
+          border-color: #bfdbfe !important;
+          box-shadow: 0 4px 16px rgba(37,99,235,.1) !important;
+          transform: translateY(-1px);
+        }
+        .jr-sort {
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 6px 28px 6px 10px;
+          font-size: 12px;
+          font-family: inherit;
+          font-weight: 600;
+          color: #334155;
+          background: #ffffff;
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          outline: none;
+          transition: border-color .15s, box-shadow .15s;
+        }
+        .jr-sort:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+        }
+        .jr-sort-wrap {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+        .jr-sort-wrap::after {
+          content: "▾";
+          position: absolute;
+          right: 10px;
+          font-size: 11px;
+          color: #64748b;
+          pointer-events: none;
+        }
+        .jr-textarea:focus {
+          border-color: #10b981 !important;
+          outline: none;
+          background: #ffffff !important;
+          box-shadow: 0 0 0 3.5px rgba(16,185,129,.14) !important;
+        }
+        @keyframes jr-spin {
+          to { transform: rotate(360deg); }
+        }
+        .jr-spinner {
+          animation: jr-spin .75s linear infinite;
+        }
+        .jr-bar-fill {
+          transition: width .65s cubic-bezier(.4, 0, .2, 1);
+        }
+        .jr-dash-btn {
+          transition: background .18s, transform .15s, box-shadow .18s;
+        }
+        .jr-dash-btn:hover {
+          background: #1d4ed8 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 16px rgba(37,99,235,.35) !important;
+        }
+        @media (max-width: 960px) {
+          .jr-left { display: none !important; }
+          .jr-grid { grid-template-columns: 1fr !important; }
+          .jr-banner-deco { display: none !important; }
+        }
+        @media (max-width: 600px) {
+          .jr-main { padding: 12px !important; }
+          .jr-banner { padding: 16px !important; flex-wrap: wrap; }
+          .jr-banner-score { width: 100% !important; justify-content: center !important; }
+        }
       `}</style>
 
-      {/* ══ LEFT DECORATIVE PANEL ══ */}
-      <div className="jr-left" style={{ width: 152, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 10px", background: "transparent" }}>
-        <button onClick={onBack} className="jr-back" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#ffffff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "6px 11px", fontSize: 10.5, fontWeight: 700, color: "#374151", cursor: "pointer", transition: "background .15s, box-shadow .15s", whiteSpace: "nowrap", alignSelf: "flex-start", marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>← Back to Dashboard</button>
-        <div style={{ fontStyle: "italic", fontFamily: "'Georgia', 'Times New Roman', serif", color: "#2563eb", fontSize: 13, lineHeight: 1.7, textAlign: "center", fontWeight: 700, marginBottom: 12 }}>
+      {/* ══ LEFT DECORATIVE PANEL (Desktop only) ══ */}
+      <aside className="jr-left" style={{ width: 154, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "18px 10px", background: "transparent" }}>
+        <button
+          onClick={onBack}
+          className="jr-back"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#ffffff",
+            border: "1.5px solid #e2e8f0",
+            borderRadius: 20,
+            padding: "6px 12px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#334155",
+            cursor: "pointer",
+            transition: "all .15s ease",
+            whiteSpace: "nowrap",
+            alignSelf: "flex-start",
+            marginBottom: 16,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Dashboard
+        </button>
+
+        <div style={{ fontStyle: "italic", fontFamily: "'Georgia', 'Times New Roman', serif", color: "#2563eb", fontSize: 13, lineHeight: 1.6, textAlign: "center", fontWeight: 700, marginBottom: 12 }}>
           Your Feedback<br />Builds a Better<br />GovNotify
         </div>
+
         <PersonIllustration />
+
         <div style={{ flex: 1 }} />
-        <div style={{ textAlign: "center", marginTop: 8 }}>
+
+        <div style={{ textAlign: "center", marginTop: 12 }}>
           <SmallBuilding />
-          <div style={{ fontStyle: "italic", fontFamily: "'Georgia', serif", color: "#2563eb", fontSize: 10, lineHeight: 1.55, marginTop: 5, fontWeight: 600 }}>Real People,<br />Real Feedback</div>
+          <div style={{ fontStyle: "italic", fontFamily: "'Georgia', serif", color: "#2563eb", fontSize: 10.5, lineHeight: 1.5, marginTop: 4, fontWeight: 700 }}>
+            Real People,<br />Real Feedback
+          </div>
         </div>
-      </div>
+      </aside>
 
-      {/* ══ MAIN CONTENT ══ */}
-      <div className="jr-main" style={{ flex: 1, padding: "14px 18px 32px 8px", display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+      {/* ══ MAIN CONTENT AREA ══ */}
+      <main className="jr-main" style={{ flex: 1, padding: "16px 20px 36px 6px", display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
 
-        {/* ── HERO BANNER ── */}
-        <div className="jr-banner" style={{ background: "linear-gradient(110deg,#1e3a8a 0%,#1d4ed8 55%,#2563eb 100%)", borderRadius: 16, padding: "20px 24px", display: "flex", alignItems: "center", gap: 18, position: "relative", overflow: "hidden", boxShadow: "0 6px 28px rgba(30,58,138,.32)" }}>
-          <div style={{ flexShrink: 0, zIndex: 1 }}><Star3D size={82} /></div>
+        {/* ── TOP HERO BANNER ── */}
+        <div
+          className="jr-banner"
+          style={{
+            background: "linear-gradient(110deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%)",
+            borderRadius: 16,
+            padding: "20px 26px",
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 6px 28px rgba(30,58,138,0.28)"
+          }}
+        >
+          <div style={{ flexShrink: 0, zIndex: 1 }}>
+            <Star3D size={76} />
+          </div>
+
           <div style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
-            <h1 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: "#fff", lineHeight: 1.2 }}>Reviews &amp; Ratings</h1>
-            <p style={{ margin: "5px 0 0", fontSize: 12.5, color: "#93c5fd", lineHeight: 1.5 }}>Real feedback from our users to help you trust GovNotify.</p>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+              Reviews &amp; Ratings
+            </h1>
+            <p style={{ margin: "5px 0 0", fontSize: 13, color: "#93c5fd", lineHeight: 1.5 }}>
+              Real feedback from verified aspirants and candidates across government recruitments.
+            </p>
             {hasJob && jobTitle && (
-              <div style={{ marginTop: 9, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 12px" }}>
-                <span style={{ fontSize: 11 }}>📅</span>
-                <span style={{ fontSize: 11.5, color: "#bfdbfe", fontStyle: "italic", fontWeight: 500 }}>*{jobTitle}*</span>
+              <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.14)", borderRadius: 20, padding: "4px 12px", border: "1px solid rgba(255,255,255,0.2)" }}>
+                <span style={{ fontSize: 12 }}>💼</span>
+                <span style={{ fontSize: 12, color: "#ffffff", fontWeight: 600 }}>{jobTitle}</span>
               </div>
             )}
           </div>
-          <div style={{ background: "#ffffff", borderRadius: 14, padding: "12px 22px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, boxShadow: "0 8px 28px rgba(0,0,0,0.26)", flexShrink: 0, minWidth: 112, zIndex: 2 }}>
-            <span style={{ fontSize: 34, fontWeight: 900, color: "#1e293b", lineHeight: 1 }}>{hasJob && avg > 0 ? avg.toFixed(1) : "—"}</span>
-            <StarDisplay rating={Math.round(avg)} size={17} />
-            <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginTop: 2 }}>{reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
+
+          {/* Overall score card */}
+          <div
+            className="jr-banner-score"
+            style={{
+              background: "#ffffff",
+              borderRadius: 14,
+              padding: "14px 22px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
+              flexShrink: 0,
+              minWidth: 115,
+              zIndex: 2
+            }}
+          >
+            <span style={{ fontSize: 34, fontWeight: 900, color: "#1e293b", lineHeight: 1 }}>
+              {hasJob && avg > 0 ? avg.toFixed(1) : "—"}
+            </span>
+            <StarDisplay rating={Math.round(avg)} size={16} />
+            <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginTop: 2 }}>
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+            </span>
           </div>
-          <div className="jr-banner-deco" style={{ position: "relative", flexShrink: 0, minWidth: 120, paddingRight: 6, zIndex: 2 }}>
-            <p style={{ margin: 0, fontStyle: "italic", fontFamily: "'Georgia', serif", color: "rgba(255,255,255,0.78)", fontSize: 13, lineHeight: 1.75, textAlign: "right", fontWeight: 600 }}>
+
+          <div className="jr-banner-deco" style={{ position: "relative", flexShrink: 0, minWidth: 125, paddingRight: 6, zIndex: 2 }}>
+            <p style={{ margin: 0, fontStyle: "italic", fontFamily: "'Georgia', serif", color: "rgba(255,255,255,0.78)", fontSize: 13, lineHeight: 1.7, textAlign: "right", fontWeight: 600 }}>
               Your Feedback<br />Builds a Better<br />GovNotify.
             </p>
           </div>
+
           <BannerBuilding />
         </div>
 
-        {/* ── TWO-COLUMN GRID ── */}
-        <div className="jr-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
+        {/* ── TWO-COLUMN DASHBOARD GRID ── */}
+        <div className="jr-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
 
-          {/* LEFT COLUMN */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* ════ LEFT COLUMN ════ */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {/* Card 1: Rating Breakdown */}
             <div style={C.card}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <div style={C.greenIconBox}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10" />
+                      <line x1="12" y1="20" x2="12" y2="4" />
+                      <line x1="6" y1="20" x2="6" y2="14" />
                     </svg>
                   </div>
                   <div>
                     <div style={C.cardTitle}>Rating Breakdown</div>
-                    <div style={C.cardSub}>Overall rating based on all reviews</div>
+                    <div style={C.cardSub}>Detailed distribution of user evaluations</div>
                   </div>
                 </div>
+
                 {hasJob && avg > 0 && (
                   <div style={C.avgBadge}>
                     <span style={{ fontSize: 13 }}>⭐</span>
-                    <span style={{ fontWeight: 900, color: "#92400e", fontSize: 14 }}>{avg.toFixed(1)}</span>
-                    <span style={{ fontSize: 11, color: "#b45309", fontWeight: 600 }}>Average Rating</span>
+                    <span style={{ fontWeight: 800, color: "#92400e", fontSize: 13.5 }}>{avg.toFixed(1)}</span>
+                    <span style={{ fontSize: 11, color: "#b45309", fontWeight: 600 }}>Average</span>
                   </div>
                 )}
               </div>
-              <div style={{ marginTop: 15, display: "flex", flexDirection: "column", gap: 8 }}>
+
+              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 9 }}>
                 {dist.map(({ star, count, pct }) => (
-                  <div key={star} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, minWidth: 30, flexShrink: 0 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>{star}</span>
+                  <div key={star} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, minWidth: 32, flexShrink: 0 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: "#334155" }}>{star}</span>
                       <span style={{ fontSize: 12, color: "#f59e0b", lineHeight: 1 }}>★</span>
                     </div>
                     <div style={{ flex: 1, height: 9, background: "#f1f5f9", borderRadius: 6, overflow: "hidden" }}>
-                      <div className="jr-bar-fill" style={{ height: "100%", borderRadius: 6, width: `${pct}%`, background: pct > 0 ? "linear-gradient(90deg,#f59e0b 0%,#fbbf24 60%,#fde68a 100%)" : "transparent" }} />
+                      <div
+                        className="jr-bar-fill"
+                        style={{
+                          height: "100%",
+                          borderRadius: 6,
+                          width: `${pct}%`,
+                          background: pct > 0 ? "linear-gradient(90deg, #f59e0b 0%, #fbbf24 60%, #fde68a 100%)" : "transparent"
+                        }}
+                      />
                     </div>
-                    <span style={{ fontSize: 12, color: "#64748b", fontWeight: 700, minWidth: 16, textAlign: "right" }}>{count}</span>
+                    <span style={{ fontSize: 12, color: "#64748b", fontWeight: 700, minWidth: 22, textAlign: "right" }}>
+                      {count}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -385,42 +618,106 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
 
             {/* Card 2: Write a Review */}
             <div style={{ ...C.card, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", right: 12, top: 12, opacity: 0.1, pointerEvents: "none" }}>
-                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.4">
-                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+              <div style={{ position: "absolute", right: 12, top: 12, opacity: 0.08, pointerEvents: "none" }}>
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </div>
+
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <div style={C.purpleIconBox}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </div>
                 <div>
                   <div style={C.cardTitle}>Write a Review</div>
-                  <div style={C.cardSub}>Share your experience with this recruitment, process, or organization.</div>
+                  <div style={C.cardSub}>Share your experience with this recruitment, application, or process.</div>
                 </div>
               </div>
-              <form onSubmit={handleSubmit} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-                <StarSelector value={rating} onChange={setRating} />
+
+              <form onSubmit={handleSubmit} style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 6 }}>
+                    Your Overall Rating
+                  </label>
+                  <StarSelector value={rating} onChange={setRating} />
+                </div>
+
                 <div style={{ position: "relative" }}>
+                  <label htmlFor="jr-review-input" style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 6 }}>
+                    Your Review
+                  </label>
                   <textarea
+                    id="jr-review-input"
                     className="jr-textarea"
-                    placeholder="Describe your experience with the application process, interview, or selection..."
+                    placeholder="Describe your experience with the notification clarity, application portal, interview stages, or overall process..."
                     value={reviewText}
                     onChange={e => setReviewText(e.target.value)}
                     maxLength={2000}
                     rows={4}
-                    style={{ width: "100%", resize: "vertical", minHeight: 88, border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 12px 22px", fontSize: 12.5, fontFamily: "inherit", color: "#1e293b", background: "#f9fafb", transition: "border-color .2s, box-shadow .2s", boxSizing: "border-box", lineHeight: 1.55 }}
+                    style={{
+                      width: "100%",
+                      resize: "vertical",
+                      minHeight: 96,
+                      border: "1.5px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "10px 12px 24px",
+                      fontSize: 13,
+                      fontFamily: "inherit",
+                      color: "#1e293b",
+                      background: "#f8fafc",
+                      transition: "all .18s ease",
+                      boxSizing: "border-box",
+                      lineHeight: 1.55
+                    }}
                   />
-                  <span style={{ position: "absolute", bottom: 8, right: 10, fontSize: 11, color: "#94a3b8", userSelect: "none" }}>{reviewText.length} / 2000</span>
+                  <span style={{ position: "absolute", bottom: 8, right: 10, fontSize: 11, color: "#94a3b8", userSelect: "none", fontWeight: 600 }}>
+                    {reviewText.length} / 2000
+                  </span>
                 </div>
-                {formError && <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 12, fontWeight: 600 }}>{formError}</div>}
-                {successMsg && <div style={{ padding: "8px 12px", background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 8, color: "#065f46", fontSize: 12, fontWeight: 700 }}>{successMsg}</div>}
-                <button type="submit" disabled={submitting} className="jr-submit" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1, transition: "background .2s, transform .15s, box-shadow .2s", boxShadow: "0 3px 12px rgba(16,185,129,.3)" }}>
+
+                {formError && (
+                  <div style={{ padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>⚠️</span>
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div style={{ padding: "9px 12px", background: "#ecfdf5", border: "1.5px solid #6ee7b7", borderRadius: 8, color: "#065f46", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(16,185,129,0.12)" }}>
+                    <span>🎉</span>
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="jr-submit"
+                  style={{
+                    alignSelf: "flex-start",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "10px 22px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    opacity: submitting ? 0.75 : 1,
+                    transition: "all .18s ease",
+                    boxShadow: "0 3px 12px rgba(16,185,129,0.3)"
+                  }}
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
                   {submitting ? "Submitting…" : "Submit Review"}
                 </button>
@@ -428,31 +725,35 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: All Reviews */}
-          <div style={{ ...C.card, display: "flex", flexDirection: "column", minHeight: 320 }}>
+          {/* ════ RIGHT COLUMN: All Reviews ════ */}
+          <div style={{ ...C.card, display: "flex", flexDirection: "column", minHeight: 380 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={C.purpleIconBox}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
               </div>
               <span style={C.cardTitle}>All Reviews</span>
               {reviews.length > 0 && (
-                <span style={{ background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 800, borderRadius: 20, padding: "2px 9px", minWidth: 22, textAlign: "center" }}>{reviews.length}</span>
+                <span style={{ background: "#2563eb", color: "#ffffff", fontSize: 11, fontWeight: 800, borderRadius: 20, padding: "2px 8px", minWidth: 20, textAlign: "center" }}>
+                  {reviews.length}
+                </span>
               )}
+
               {reviews.length > 0 && (
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="4" y1="6" x2="11" y2="6" /><line x1="4" y1="12" x2="13" y2="12" /><line x1="4" y1="18" x2="11" y2="18" />
-                    <polyline points="15 9 18 6 21 9" /><polyline points="15 15 18 18 21 15" />
-                  </svg>
-                  <span style={{ fontSize: 11.5, color: "#64748b", fontWeight: 500 }}>Sort by</span>
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11.5, color: "#64748b", fontWeight: 600 }}>Sort by:</span>
                   <div className="jr-sort-wrap">
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="jr-sort">
-                      <option value="newest">Newest</option>
-                      <option value="oldest">Oldest</option>
-                      <option value="highest">Highest</option>
-                      <option value="lowest">Lowest</option>
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value)}
+                      className="jr-sort"
+                      aria-label="Sort reviews by"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="highest">Highest Rating</option>
+                      <option value="lowest">Lowest Rating</option>
                     </select>
                   </div>
                 </div>
@@ -460,38 +761,75 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
             </div>
 
             {!hasJob ? (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px 12px 20px", textAlign: "center" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 14px", textAlign: "center" }}>
                 <EmptyIllustration />
-                <p style={{ margin: "16px 0 6px", fontSize: 16, fontWeight: 800, color: "#1e293b" }}>No job selected</p>
-                <p style={{ margin: 0, fontSize: 12.5, color: "#94a3b8", lineHeight: 1.65, maxWidth: 230 }}>Open any job from the dashboard and<br />click &ldquo;View Reviews&rdquo; to see its reviews here.</p>
-                <button onClick={onBack} className="jr-dash-btn" style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 7, background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 14px rgba(37,99,235,.3)" }}>→ Go to Dashboard →</button>
+                <p style={{ margin: "16px 0 6px", fontSize: 16, fontWeight: 800, color: "#1e293b" }}>
+                  No job selected
+                </p>
+                <p style={{ margin: 0, fontSize: 12.5, color: "#94a3b8", lineHeight: 1.6, maxWidth: 240 }}>
+                  Open any job notification from your dashboard and click &ldquo;View Reviews&rdquo; to read experiences or leave feedback.
+                </p>
+                <button
+                  onClick={onBack}
+                  className="jr-dash-btn"
+                  style={{
+                    marginTop: 18,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "10px 22px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    boxShadow: "0 3px 14px rgba(37,99,235,.28)"
+                  }}
+                >
+                  Go to Dashboard →
+                </button>
               </div>
             ) : loading ? (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 16px", gap: 12 }}>
-                <div className="jr-spinner" style={{ width: 30, height: 30, border: "3px solid #e2e8f0", borderTop: "3px solid #10b981", borderRadius: "50%" }} />
-                <span style={{ fontSize: 12.5, color: "#94a3b8", fontWeight: 500 }}>Loading reviews…</span>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 16px", gap: 12 }}>
+                <div className="jr-spinner" style={{ width: 32, height: 32, border: "3px solid #e2e8f0", borderTop: "3px solid #10b981", borderRadius: "50%" }} />
+                <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>Loading reviews…</span>
               </div>
             ) : reviews.length === 0 ? (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", textAlign: "center", gap: 8 }}>
-                <span style={{ fontSize: 46 }}>💬</span>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#374151" }}>No reviews yet</p>
-                <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>Be the first to share your experience!</p>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "36px 16px", textAlign: "center", gap: 8 }}>
+                <span style={{ fontSize: 44 }}>💬</span>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#334155" }}>No reviews yet</p>
+                <p style={{ margin: 0, fontSize: 12.5, color: "#94a3b8", maxWidth: 260 }}>
+                  Be the first candidate to share feedback on this recruitment using the form on the left!
+                </p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 440, overflowY: "auto", paddingRight: 2 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 460, overflowY: "auto", paddingRight: 4 }}>
                 {sortedReviews.map(r => (
-                  <div key={r.id} className="jr-rcard" style={{ background: "#f8fafc", border: "1.5px solid #e8edf5", borderRadius: 11, padding: "12px 14px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                  <div key={r.id} className="jr-rcard" style={{ background: "#f8fafc", border: "1.5px solid #e8edf5", borderRadius: 12, padding: "13px 15px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, flexShrink: 0, boxShadow: "0 2px 6px rgba(16,185,129,.3)" }}>{(r.userEmail || "?")[0].toUpperCase()}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, flexShrink: 0, boxShadow: "0 2px 6px rgba(16,185,129,0.25)" }}>
+                          {(r.userEmail || "?")[0].toUpperCase()}
+                        </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{maskEmail(r.userEmail)}</div>
-                          <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}><span>📅</span>{fmtDate(r.createdAt)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
+                            {maskEmail(r.userEmail)}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>📅</span>
+                            <span>{fmtDate(r.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
                       <StarDisplay rating={r.rating} size={14} />
                     </div>
-                    {r.reviewText && <p style={{ margin: 0, fontSize: 12.5, color: "#374151", lineHeight: 1.6 }}>{r.reviewText}</p>}
+                    {r.reviewText && (
+                      <p style={{ margin: 0, fontSize: 12.5, color: "#334155", lineHeight: 1.6, wordBreak: "break-word" }}>
+                        {r.reviewText}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -499,37 +837,109 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
           </div>
         </div>
 
-        {/* ── BOTTOM: Recent Reviews bar ── */}
+        {/* ── BOTTOM FULL-WIDTH RECENT REVIEWS BAR ── */}
         {latestReview && (
-          <div style={{ background: "linear-gradient(90deg,#ecfdf5 0%,#f0fdf8 100%)", border: "1.5px solid #a7f3d0", borderRadius: 13, padding: "13px 22px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", boxShadow: "0 2px 10px rgba(16,185,129,.08)" }}>
+          <div
+            style={{
+              background: "linear-gradient(90deg, #ecfdf5 0%, #f0fdf8 100%)",
+              border: "1.5px solid #a7f3d0",
+              borderRadius: 14,
+              padding: "13px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              flexWrap: "wrap",
+              boxShadow: "0 2px 10px rgba(16,185,129,0.08)"
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <span style={{ fontSize: 17 }}>⭐</span>
+              <span style={{ fontSize: 16 }}>⭐</span>
               <span style={{ fontSize: 13.5, fontWeight: 800, color: "#065f46" }}>Recent Reviews</span>
-              <span style={{ background: "#10b981", color: "#fff", fontSize: 10.5, fontWeight: 800, borderRadius: 20, padding: "2px 8px" }}>{reviews.length}</span>
+              <span style={{ background: "#10b981", color: "#ffffff", fontSize: 10.5, fontWeight: 800, borderRadius: 20, padding: "2px 8px" }}>
+                {reviews.length}
+              </span>
             </div>
-            <div style={{ width: 1, height: 34, background: "#6ee7b7", flexShrink: 0 }} />
+
+            <div style={{ width: 1, height: 32, background: "#6ee7b7", flexShrink: 0 }} />
+
             <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, flexShrink: 0, boxShadow: "0 2px 6px rgba(16,185,129,.25)" }}>{(latestReview.userEmail || "?")[0].toUpperCase()}</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#1e293b" }}>{maskEmail(latestReview.userEmail)}</div>
-                <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}><span>📅</span>{fmtDate(latestReview.createdAt)}</div>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, flexShrink: 0, boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>
+                {(latestReview.userEmail || "?")[0].toUpperCase()}
               </div>
-              <p style={{ margin: "0 0 0 6px", fontSize: 12.5, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{latestReview.reviewText}</p>
+              <div style={{ minWidth: 0, flexShrink: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{maskEmail(latestReview.userEmail)}</div>
+                <div style={{ fontSize: 10.5, color: "#64748b", display: "flex", alignItems: "center", gap: 3, marginTop: 1 }}>
+                  <span>📅</span>
+                  <span>{fmtDate(latestReview.createdAt)}</span>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 0 8px", fontSize: 12, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                &ldquo;{latestReview.reviewText}&rdquo;
+              </p>
             </div>
+
             <StarDisplay rating={latestReview.rating} size={15} />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
 
 // ── Shared style constants ────────────────────────────────────────────────────
 const C = {
-  card: { background: "#ffffff", borderRadius: 14, border: "1.5px solid #e8f0fe", padding: "18px 20px", boxShadow: "0 2px 10px rgba(30,58,138,.06)" },
-  cardTitle: { fontSize: 14, fontWeight: 800, color: "#0f172a", lineHeight: 1.3 },
-  cardSub: { fontSize: 11.5, color: "#94a3b8", marginTop: 2, lineHeight: 1.4 },
-  greenIconBox: { width: 32, height: 32, background: "linear-gradient(135deg,#dcfce7,#bbf7d0)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, boxShadow: "0 2px 6px rgba(16,185,129,.15)" },
-  purpleIconBox: { width: 32, height: 32, background: "linear-gradient(135deg,#ede9fe,#ddd6fe)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, boxShadow: "0 2px 6px rgba(124,58,237,.15)" },
-  avgBadge: { display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(135deg,#fef9ec,#fef3c7)", border: "1.5px solid #fde68a", borderRadius: 20, padding: "5px 12px", flexShrink: 0, boxShadow: "0 2px 6px rgba(245,158,11,.12)" }
+  card: {
+    background: "#ffffff",
+    borderRadius: 14,
+    border: "1.5px solid #e8f0fe",
+    padding: "18px 20px",
+    boxShadow: "0 2px 10px rgba(30,58,138,0.05)"
+  },
+  cardTitle: {
+    fontSize: 14.5,
+    fontWeight: 800,
+    color: "#0f172a",
+    lineHeight: 1.3
+  },
+  cardSub: {
+    fontSize: 11.5,
+    color: "#94a3b8",
+    marginTop: 2,
+    lineHeight: 1.4
+  },
+  greenIconBox: {
+    width: 32,
+    height: 32,
+    background: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
+    borderRadius: 9,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 1,
+    boxShadow: "0 2px 6px rgba(16,185,129,0.15)"
+  },
+  purpleIconBox: {
+    width: 32,
+    height: 32,
+    background: "linear-gradient(135deg, #ede9fe, #ddd6fe)",
+    borderRadius: 9,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 1,
+    boxShadow: "0 2px 6px rgba(124,58,237,0.15)"
+  },
+  avgBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    background: "linear-gradient(135deg, #fef9ec, #fef3c7)",
+    border: "1.5px solid #fde68a",
+    borderRadius: 20,
+    padding: "4px 10px",
+    flexShrink: 0,
+    boxShadow: "0 2px 6px rgba(245,158,11,0.12)"
+  }
 };
