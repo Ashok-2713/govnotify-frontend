@@ -52,6 +52,7 @@ function timeAgo(dateStr) {
 
 export default function UsersAndActivity({ adminEmail = "ashokudhay2007@gmail.com" }) {
   const [users, setUsers] = useState([]);
+  const [guestSessions, setGuestSessions] = useState([]);
   const [userActivities, setUserActivities] = useState({}); // { [email]: { savedJobs: [], profile: null } }
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,6 +115,17 @@ export default function UsersAndActivity({ adminEmail = "ashokudhay2007@gmail.co
         })
       );
       setUserActivities(activityMap);
+
+            // Fetch guest sessions
+      try {
+        const guestRes = await fetch(`${API_URL}/api/guest/all`);
+        if (guestRes.ok) {
+          const guestData = await guestRes.json();
+          setGuestSessions(Array.isArray(guestData) ? guestData : []);
+        }
+      } catch (gErr) {
+        console.warn("Guest sessions fetch error:", gErr);
+      }
 
       if (showToast) {
         setSuccessToast("User data & real database activity refreshed successfully!");

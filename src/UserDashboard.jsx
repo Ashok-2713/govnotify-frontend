@@ -78,6 +78,8 @@ export default function UserDashboard({
   onViewReviewsClick,
   onReviewsClick,
   onAIRecommendationsClick,
+  isGuest = false,
+  onShowAuthWall,
 
   appliedEligibilityFilter = null,
   onClearEligibilityFilter
@@ -99,6 +101,14 @@ export default function UserDashboard({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const toastTimerRef = useRef(null);
+
+    const checkGuest = (actionCallback) => {
+    if (isGuest) {
+      if (onShowAuthWall) onShowAuthWall();
+    } else {
+      if (actionCallback) actionCallback();
+    }
+  };
 
   const showNotification = (message, type = "success") => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -796,7 +806,7 @@ export default function UserDashboard({
                         <div className="job-card-left">
                           <JobLogo url={job.officialApplyUrl} organization={job.organization} state={job.state} title={job.title} />
                           <div className="job-card-details">
-                            <h4 onClick={() => setSelectedJobDetail(job)} title={job.title}>{job.title}</h4>
+                            <h4 onClick={() => checkGuest(() => setSelectedJobDetail(job))} title={job.title}>{job.title}</h4>
                             <p className="job-org-sub">{job.organization || "Government Department"}</p>
                             <div className="job-card-tags">
                               <span className="tag blue">{job.qualification || "Graduate"}</span>
@@ -811,18 +821,18 @@ export default function UserDashboard({
                           </div>
                           <span className="badge-new-pill">New</span>
                           <div className="job-actions">
-                            <button className="btn-save-sm" onClick={() => saveJob(job)} title="Save Job">
+                            <button className="btn-save-sm" onClick={() => checkGuest(() => saveJob(job))} title="Save Job">
                               <Bookmark size={14} />
                             </button>
                             <button
                               className="btn-save-sm"
-                              onClick={() => handleApplyJob(job)}
+                              onClick={() => checkGuest(() => handleApplyJob(job))}
                               title="Add to Application Tracker"
                               style={{ color: "#10b981" }}
                             >
                               <Send size={14} />
                             </button>
-                            <button className="btn-view-sm" onClick={() => setSelectedJobDetail(job)} title="View Job Details">
+                            <button className="btn-view-sm" onClick={() => checkGuest(() => setSelectedJobDetail(job))} title="View Job Details">
                               View <ChevronRight size={14} />
                             </button>
                           </div>
@@ -999,7 +1009,7 @@ export default function UserDashboard({
             <div className="gn-modal-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={() => saveJob(selectedJobDetail)}
+                onClick={() => checkGuest(() => saveJob(selectedJobDetail))}
                 className="gn-modal-btn"
                 style={{ background: '#10b981', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
@@ -1016,7 +1026,7 @@ export default function UserDashboard({
               >
                 <MessageSquare size={16} /> View Reviews
               </button>
-              <a href={selectedJobDetail.officialApplyUrl || "#"} target="_blank" rel="noreferrer" className="gn-modal-btn">
+              <a href={selectedJobDetail.officialApplyUrl || "#"} target="_blank" rel="noreferrer" className="gn-modal-btn" onClick={(e) => { if (isGuest) { e.preventDefault(); if (onShowAuthWall) onShowAuthWall(); } }}>
                 Apply on Official Portal <ExternalLink size={16} />
               </a>
             </div>
