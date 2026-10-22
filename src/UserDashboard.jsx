@@ -20,12 +20,10 @@ function daysLeft(dateStr) {
   return diff > 0 ? diff : 0;
 }
 
-// Helper: A job is considered "active" if its deadline has not yet passed.
-// If lastDate is missing, treat the job as active (assume it's still open).
 const isActiveJob = (job) => {
   if (!job || !job.lastDate) return true;
   const lastDate = new Date(job.lastDate);
-  if (isNaN(lastDate.getTime())) return true; // Invalid date → treat as active
+  if (isNaN(lastDate.getTime())) return true;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const last = new Date(lastDate);
@@ -40,7 +38,6 @@ function fmtDate(dateStr) {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// Helper: Format date into month abbreviation and day number
 const formatDateBadge = (dateStr) => {
   if (!dateStr) return { month: "TBD", day: "—", valid: false };
   const d = new Date(dateStr);
@@ -52,7 +49,6 @@ const formatDateBadge = (dateStr) => {
   };
 };
 
-// Helper: Compute days until a given date
 const daysUntil = (dateStr) => {
   if (!dateStr) return "TBD";
   const target = new Date(dateStr);
@@ -66,53 +62,6 @@ const daysUntil = (dateStr) => {
   if (diff === 1) return "Tomorrow";
   return `In ${diff} days`;
 };
-
-function getMonthAbbr(dateStr) {
-  return formatDateBadge(dateStr).month;
-}
-
-function getDayNum(dateStr) {
-  return String(formatDateBadge(dateStr).day);
-}
-
-  const domain = getDomain(url);
-  const sources = useMemo(() => [
-    orgLogo,
-    domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
-    domain ? `https://logo.clearbit.com/${domain}` : null,
-    null
-  ].filter(Boolean), [orgLogo, domain]);
-
-  const [stage, setStage] = useState(0);
-  const currentSrc = sources[stage] || null;
-  const handleError = () => { if (stage < sources.length - 1) setStage(prev => prev + 1); };
-
-  if (!currentSrc) {
-    return (
-      <div style={{
-        width: 40, height: 40, borderRadius: '50%',
-        background: 'linear-gradient(135deg, #10b981, #2563eb)',
-        color: '#ffffff', display: 'grid', placeItems: 'center',
-        fontWeight: 800, fontSize: 16, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        {organization?.charAt(0) || state?.charAt(0) || '?'}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      width: 40, height: 40, borderRadius: '50%',
-      background: '#ffffff', border: '1.5px solid #e2e8f0',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 3, flexShrink: 0, overflow: 'hidden'
-    }}>
-      <img src={currentSrc} alt={organization || state || "Seal"} onError={handleError}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%', imageRendering: '-webkit-optimize-contrast' }} />
-    </div>
-  );
-
 
 export default function UserDashboard({
   userEmail = "ashok.udhay@govnotify.in",
@@ -158,7 +107,6 @@ export default function UserDashboard({
       setToastNotification(null);
     }, 4000);
 
-    // Also trigger instant browser popup dialog asynchronously so DOM renders first
     setTimeout(() => {
       try {
         alert(message);
@@ -167,12 +115,6 @@ export default function UserDashboard({
       }
     }, 10);
   };
-
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, sender: "bot", text: "Hello! I'm GovNotify AI Assistant 🤖. Ask me about jobs, deadlines, eligibility, notifications, or any government job info. How can I help you today?" }
-  ]);
-  const [chatInput, setChatInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
 
   const fetchAllJobs = () => {
     setLoading(true);
@@ -215,8 +157,6 @@ export default function UserDashboard({
   };
 
   const loadJobsAndProfile = () => {
-    // ALWAYS fetch from /api/jobs/all and show all jobs by default
-    // Does NOT automatically read localStorage.getItem("eligibilityProfile") or auto-filter
     fetchAllJobs();
   };
 
@@ -364,42 +304,6 @@ export default function UserDashboard({
       .slice(0, 4);
   }, [jobs]);
 
-  const handleSendMessage = (textToSend) => {
-    const msgText = (textToSend || chatInput).trim();
-    if (!msgText) return;
-    const userMsgObj = { id: Date.now(), sender: "user", text: msgText };
-    setChatMessages(prev => [...prev, userMsgObj]);
-    if (!textToSend) setChatInput("");
-    setIsTyping(true);
-    setTimeout(() => {
-      const q = msgText.toLowerCase();
-      let matchedJobs = [];
-      let botResponseText = "";
-      if (q.includes("tnpsc") || q.includes("tamil nadu")) {
-        matchedJobs = activeCurrentJobs.filter(j => (j.state === "Tamil Nadu" || j.title.includes("TNPSC")));
-        botResponseText = "Here are the latest active TNPSC & Tamil Nadu government jobs:";
-      } else if (q.includes("karnataka") || q.includes("kpsc") || q.includes("kea")) {
-        matchedJobs = activeCurrentJobs.filter(j => (j.state === "Karnataka" || j.title.includes("KEA")));
-        botResponseText = "Here are the latest Karnataka government job notifications:";
-      } else if (q.includes("kerala") || q.includes("psc")) {
-        matchedJobs = activeCurrentJobs.filter(j => (j.state === "Kerala"));
-        botResponseText = "Here are the active Kerala PSC job recruitments:";
-      } else if (q.includes("closing") || q.includes("soon") || q.includes("deadline")) {
-        matchedJobs = activeCurrentJobs.filter(j => daysLeft(j.lastDate) <= 7);
-        botResponseText = "Here are the government jobs closing soon this week:";
-      } else {
-        matchedJobs = activeCurrentJobs.filter(j => j.title.toLowerCase().includes(q) || j.organization?.toLowerCase().includes(q) || j.state?.toLowerCase().includes(q));
-        botResponseText = matchedJobs.length > 0
-          ? `I found ${matchedJobs.length} active job notification(s) matching "${msgText}":`
-          : `I couldn't find any active jobs matching "${msgText}". Try searching for TNPSC, KEA, Police, Kerala PSC, or jobs closing soon.`;
-      }
-      const botMsgObj = { id: Date.now() + 1, sender: "bot", text: botResponseText, jobs: matchedJobs.slice(0, 3) };
-      setChatMessages(prev => [...prev, botMsgObj]);
-      setIsTyping(false);
-    }, 600);
-  };
-
-  // PART 1: Optimistic UI implementation for saving jobs
   const handleSave = (job) => {
     if (!job) return;
     const email = userEmail || "default@example.com";
@@ -408,7 +312,6 @@ export default function UserDashboard({
     const lastDate = job.lastDate ? String(job.lastDate) : "N/A";
     const officialApplyUrl = job.officialApplyUrl || job.sourceUrl || "";
 
-    // Check if job is already saved
     const isAlreadySaved = savedJobs.some(
       sj => (sj.jobTitle && sj.jobTitle.toLowerCase() === jobTitle.toLowerCase()) ||
             (sj.id && job.id && String(sj.id) === String(job.id))
@@ -419,11 +322,9 @@ export default function UserDashboard({
       return;
     }
 
-    // 1. Snapshot previous state for rollback on error
     const previousSavedJobs = [...savedJobs];
     const previousSavedCount = savedCount;
 
-    // 2. Optimistically update local state immediately (within 100ms)
     const optimisticJob = {
       id: `temp-${Date.now()}`,
       userEmail: email,
@@ -437,11 +338,9 @@ export default function UserDashboard({
     setSavedJobs(prev => [...prev, optimisticJob]);
     setSavedCount(prev => prev + 1);
 
-    // 3. Immediately trigger success notification popup (within 100ms)
     const successMsg = "✅ Job saved successfully! Email notification sent.";
     showNotification(successMsg, "success");
 
-    // 4. Send API request to backend in background (fire and forget)
     fetch(`${API_BASE}/api/saved-jobs/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -459,16 +358,13 @@ export default function UserDashboard({
       }
       const msg = await res.text();
       if (msg.includes("already saved")) {
-        // Rollback optimistic state if backend indicates already saved
         setSavedJobs(previousSavedJobs);
         setSavedCount(previousSavedCount);
       } else {
-        // Background sync to update temporary ID with real database ID
         loadSavedJobs();
       }
     })
     .catch((err) => {
-      // 5. Error handling: Revert UI change and show error notification
       console.error("Background save job failed, reverting UI:", err);
       setSavedJobs(previousSavedJobs);
       setSavedCount(previousSavedCount);
@@ -478,7 +374,6 @@ export default function UserDashboard({
 
   const saveJob = handleSave;
 
-  // Apply Job: POST to /api/applied-jobs/apply and show toast
   const handleApplyJob = (job) => {
     if (!job) return;
     const payload = {
@@ -499,10 +394,8 @@ export default function UserDashboard({
       .catch(() => showNotification("❌ Failed to add job. Please try again.", "error"));
   };
 
-  // Helper to extract user full name from localStorage or sessionStorage
   const resolveStoredName = () => {
     try {
-      // 1. Check user object in localStorage or sessionStorage (e.g. { fullName, name, userName })
       const rawUser = localStorage.getItem("user") || sessionStorage.getItem("user");
       if (rawUser) {
         const u = JSON.parse(rawUser);
@@ -511,7 +404,6 @@ export default function UserDashboard({
         if (u.userName && u.userName.trim()) return u.userName.trim();
       }
 
-      // 2. Check candidateName, fullName, or userName directly stored in localStorage
       const directCandidateName = localStorage.getItem("candidateName");
       if (directCandidateName && directCandidateName.trim()) return directCandidateName.trim();
 
@@ -521,7 +413,6 @@ export default function UserDashboard({
       const directName = localStorage.getItem("name") || localStorage.getItem("userName");
       if (directName && directName.trim()) return directName.trim();
 
-      // 3. Check profile objects
       const rawProf = localStorage.getItem("userProfile") || localStorage.getItem("eligibilityProfile");
       if (rawProf) {
         const p = JSON.parse(rawProf);
@@ -537,7 +428,6 @@ export default function UserDashboard({
 
   const [displayName, setDisplayName] = useState(() => resolveStoredName());
 
-  // Fetch full name from backend profile/settings if not already in storage
   useEffect(() => {
     const stored = resolveStoredName();
     if (stored) {
@@ -562,7 +452,6 @@ export default function UserDashboard({
 
   const userName = useMemo(() => {
     if (displayName && displayName.trim()) return displayName.trim();
-    // Graceful fallback to user's email
     return userEmail || "User";
   }, [displayName, userEmail]);
 
@@ -647,7 +536,6 @@ export default function UserDashboard({
           <button className={`pro-nav-link ${activeTab === "upcoming" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onUpcomingJobsClick && onUpcomingJobsClick(); }}>
             <Calendar size={18} /><span>Upcoming Jobs</span>
           </button>
-          {/* ⭐ SAVED JOBS — Navigates to dedicated page */}
           <button className={`pro-nav-link ${activeTab === "saved" ? "active" : ""}`} onClick={() => { setMobileMenuOpen(false); onSavedJobsClick && onSavedJobsClick(); }}>
             <Bookmark size={18} /><span>Saved Jobs</span>
           </button>
@@ -1044,7 +932,6 @@ export default function UserDashboard({
               <button className="action-btn green-btn" onClick={onEligibilityClick}>Check Now</button>
             </div>
 
-            {/* ⭐ SAVED JOBS CARD — Navigates to dedicated page */}
             <div className="pro-action-card">
               <div className="action-card-header">
                 <div className="action-card-text">
