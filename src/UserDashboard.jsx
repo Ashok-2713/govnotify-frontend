@@ -112,7 +112,7 @@ function getDayNum(dateStr) {
         style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%', imageRendering: '-webkit-optimize-contrast' }} />
     </div>
   );
-};
+;
 
 
 export default function UserDashboard({
