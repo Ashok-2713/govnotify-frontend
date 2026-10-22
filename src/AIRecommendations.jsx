@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import JobLogo from "./components/JobLogo";
 import {
   Sparkles,
   Flame,
@@ -123,142 +124,7 @@ function BannerDocIllustration() {
   );
 }
 
-// ── Smart Circular Organization Logo ─────────────────────────────────────────
-function OrgLogo({ state, organization, title, officialApplyUrl }) {
-  const combined = `${state || ""} ${organization || ""} ${title || ""}`.toLowerCase();
 
-  // 1. KPTCL (Karnataka Power Transmission)
-  if (combined.includes("kptcl") || combined.includes("power transmission") || combined.includes("bescom")) {
-    return (
-      <div className="air-logo-circle" title="KPTCL">
-        <svg width="44" height="44" viewBox="0 0 50 50" fill="none">
-          <circle cx="25" cy="25" r="23" stroke="#0284c7" strokeWidth="2" fill="#f0f9ff" />
-          <path d="M25 8 L33 40 M25 8 L17 40" stroke="#0369a1" strokeWidth="2" />
-          <line x1="20" y1="20" x2="30" y2="20" stroke="#0369a1" strokeWidth="2" />
-          <line x1="18" y1="28" x2="32" y2="28" stroke="#0369a1" strokeWidth="2" />
-          <line x1="16" y1="36" x2="34" y2="36" stroke="#0369a1" strokeWidth="2" />
-          <text x="25" y="47" fontSize="6" fontWeight="bold" textAnchor="middle" fill="#0369a1">KPTCL</text>
-        </svg>
-      </div>
-    );
-  }
-
-  // 2. Karnataka Forest Department
-  if (combined.includes("forest") || combined.includes("watcher") || combined.includes("wildlife")) {
-    return (
-      <div className="air-logo-circle" title="Forest Department">
-        <svg width="44" height="44" viewBox="0 0 50 50" fill="none">
-          <circle cx="25" cy="25" r="23" stroke="#15803d" strokeWidth="2" fill="#f0fdf4" />
-          <path d="M25 12 L33 28 L28 28 L35 38 L15 38 L22 28 L17 28 Z" fill="#16a34a" />
-          <path d="M20 22 L26 34 L14 34 Z" fill="#15803d" opacity="0.8" />
-          <rect x="23.5" y="38" width="3" height="4" fill="#78350f" />
-          <text x="25" y="47" fontSize="5.5" fontWeight="bold" textAnchor="middle" fill="#166534">FOREST</text>
-        </svg>
-      </div>
-    );
-  }
-
-  // 3. High Court of Karnataka
-  if (combined.includes("high court") || combined.includes("court secretary") || combined.includes("judicial") || combined.includes("judge")) {
-    return (
-      <div className="air-logo-circle" title="High Court">
-        <svg width="44" height="44" viewBox="0 0 50 50" fill="none">
-          <circle cx="25" cy="25" r="23" stroke="#b45309" strokeWidth="2" fill="#fefce8" />
-          <line x1="25" y1="12" x2="25" y2="38" stroke="#b45309" strokeWidth="2" />
-          <line x1="14" y1="17" x2="36" y2="17" stroke="#b45309" strokeWidth="2" />
-          <path d="M14 17 L11 25 C11 28 17 28 17 25 Z" fill="#d97706" />
-          <path d="M36 17 L33 25 C33 28 39 28 39 25 Z" fill="#d97706" />
-          <rect x="20" y="38" width="10" height="3" rx="1" fill="#b45309" />
-          <text x="25" y="47" fontSize="5" fontWeight="bold" textAnchor="middle" fill="#92400e">HIGH COURT</text>
-        </svg>
-      </div>
-    );
-  }
-
-  // 4. KEA (Karnataka Examinations Authority)
-  if (combined.includes("kea") || combined.includes("examinations authority") || combined.includes("cet")) {
-    return (
-      <div className="air-logo-circle" title="KEA">
-        <svg width="44" height="44" viewBox="0 0 50 50" fill="none">
-          <circle cx="25" cy="25" r="23" stroke="#7e22ce" strokeWidth="2" fill="#faf5ff" />
-          <rect x="12" y="16" width="8" height="18" rx="2" fill="#9333ea" />
-          <path d="M20 25 L28 16 H34 L25 26 L34 34 H28 L20 25 Z" fill="#7e22ce" />
-          <text x="25" y="45" fontSize="7" fontWeight="900" textAnchor="middle" fill="#6b21a8">KEA</text>
-        </svg>
-      </div>
-    );
-  }
-
-  // 5. Karnataka State Government (Gandaberunda / State Emblem)
-  if (combined.includes("karnataka") || combined.includes("kpsc") || combined.includes("fda") || combined.includes("sda")) {
-    return (
-      <div className="air-logo-circle" title="Government of Karnataka">
-        <img
-          src="/logos/karnataka.png"
-          alt="Karnataka Seal"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            e.currentTarget.nextSibling.style.display = "flex";
-          }}
-          style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }}
-        />
-        <div style={{ display: "none", width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
-          <Landmark size={22} color="#b91c1c" />
-        </div>
-      </div>
-    );
-  }
-
-  // 6. Tamil Nadu
-  if (combined.includes("tamil nadu") || combined.includes("tnpsc")) {
-    return (
-      <div className="air-logo-circle" title="Tamil Nadu">
-        <img src="/logos/tamilnadu.png" alt="TN Seal" style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }} />
-      </div>
-    );
-  }
-
-  // 7. Central / SSC / UPSC / Railway
-  if (combined.includes("railway") || combined.includes("rrb")) {
-    return (
-      <div className="air-logo-circle" title="Indian Railways">
-        <img src="/logos/railway.png" alt="Railway Seal" style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }} />
-      </div>
-    );
-  }
-  if (combined.includes("ssc")) {
-    return (
-      <div className="air-logo-circle" title="Staff Selection Commission">
-        <img src="/logos/ssc.png" alt="SSC Seal" style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }} />
-      </div>
-    );
-  }
-  if (combined.includes("upsc")) {
-    return (
-      <div className="air-logo-circle" title="UPSC">
-        <img src="/logos/upsc.png" alt="UPSC Seal" style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }} />
-      </div>
-    );
-  }
-
-  // Default Central Government Emblem
-  return (
-    <div className="air-logo-circle" title="Government Department">
-      <img
-        src="/logos/central.png"
-        alt="Govt Seal"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-          e.currentTarget.nextSibling.style.display = "flex";
-        }}
-        style={{ width: "85%", height: "85%", objectFit: "contain", borderRadius: "50%" }}
-      />
-      <div style={{ display: "none", width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
-        <Building2 size={22} color="#2563eb" />
-      </div>
-    </div>
-  );
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Main Component
@@ -427,12 +293,7 @@ export default function AIRecommendations({ userEmail, onBack, onProfileClick })
           </div>
 
           <div className="air-logo-container">
-            <OrgLogo
-              state={job.state}
-              organization={job.organization}
-              title={job.title}
-              officialApplyUrl={job.officialApplyUrl}
-            />
+            <JobLogo url={job.officialApplyUrl} organization={job.organization} state={job.state} title={job.title} size={42} />
           </div>
         </div>
 
