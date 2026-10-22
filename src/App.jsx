@@ -58,8 +58,6 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [showAuthWall, setShowAuthWall] = useState(false);
   const [showJobReviews, setShowJobReviews] = useState(false);
   const [reviewJobData, setReviewJobData] = useState(null);
 
@@ -291,8 +289,6 @@ function App() {
           onBack={() => setShowAIRecommendations(false)}
           onProfileClick={() => {
             setShowAIRecommendations(false);
-            setIsGuest(false);
-            setShowAuthWall(false);
             setCurrentPage("profile");
           }}
         />
@@ -330,8 +326,6 @@ function App() {
       userView = (
         <UserDashboard
           userEmail={userEmail}
-          isGuest={isGuest}
-          onShowAuthWall={() => setShowAuthWall(true)}
           appliedEligibilityFilter={eligibilityFilter}
           onClearEligibilityFilter={() => setEligibilityFilter(null)}
           onLogout={() => {
@@ -373,27 +367,10 @@ function App() {
       );
     }
 
-        return (
+    return (
       <>
         {userView}
         <AIAssistant userEmail={userEmail} />
-        {showAuthWall && (
-          <AuthWallModal
-            onClose={() => setShowAuthWall(false)}
-            onLogin={() => {
-              setShowAuthWall(false);
-              setIsUser(false);
-              setIsGuest(false);
-              openModal("login");
-            }}
-            onRegister={() => {
-              setShowAuthWall(false);
-              setIsUser(false);
-              setIsGuest(false);
-              openModal("register");
-            }}
-          />
-        )}
       </>
     );
   }
@@ -701,37 +678,6 @@ function App() {
                   />
                 </div>
               </div>
-                            <div style={{ margin: "10px 0 16px", textAlign: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "10px 0 12px" }}>
-                  <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                  <span style={{ fontSize: "11.5px", color: "#94a3b8", fontWeight: 600 }}>or explore without account</span>
-                  <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGuestLogin}
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    borderRadius: "8px",
-                    border: "1.5px dashed #cbd5e1",
-                    background: "#f8fafc",
-                    color: "#334155",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    transition: "all 0.15s ease"
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#10b981"; e.currentTarget.style.color = "#059669"; e.currentTarget.style.background = "#ecfdf5"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.color = "#334155"; e.currentTarget.style.background = "#f8fafc"; }}
-                >
-                  <User size={15} /> Continue as Guest
-                </button>
-              </div>
               <div className="modal-footer-link">
                 New to GovNotify? <button type="button" onClick={() => openModal("register")}>Create an Account</button>
               </div>
@@ -990,134 +936,3 @@ const styles = `
 `;
 
 export default App;
-// ── Auth Wall Modal ──────────────────────────────────────────────────────────
-function AuthWallModal({ onClose, onLogin, onRegister }) {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(15, 23, 42, 0.65)",
-        backdropFilter: "blur(6px)",
-        zIndex: 12000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px"
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "18px",
-          maxWidth: "430px",
-          width: "100%",
-          padding: "32px 28px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-          textAlign: "center",
-          position: "relative",
-          border: "1px solid #e2e8f0"
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "16px",
-            right: "16px",
-            background: "#f1f5f9",
-            border: "none",
-            borderRadius: "50%",
-            width: "32px",
-            height: "32px",
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            color: "#64748b"
-          }}
-          aria-label="Close"
-        >
-          <X size={16} />
-        </button>
-
-        <div
-          style={{
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            backgroundColor: "#ecfdf5",
-            color: "#10b981",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 16px"
-          }}
-        >
-          <Lock size={26} />
-        </div>
-
-        <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontWeight: 800, color: "#0f172a" }}>
-          Sign in to Continue
-        </h3>
-
-        <p style={{ margin: "0 0 24px", fontSize: "13.5px", color: "#64748b", lineHeight: 1.55 }}>
-          Create an account or log in to view details, save jobs, and track applications.
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <button
-            onClick={onLogin}
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "10px",
-              backgroundColor: "#10b981",
-              color: "#ffffff",
-              fontSize: "14px",
-              fontWeight: 700,
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.28)"
-            }}
-          >
-            Login to Account
-          </button>
-
-          <button
-            onClick={onRegister}
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "10px",
-              backgroundColor: "#ffffff",
-              color: "#2563eb",
-              fontSize: "14px",
-              fontWeight: 700,
-              border: "1.5px solid #bfdbfe",
-              cursor: "pointer"
-            }}
-          >
-            Create Free Account
-          </button>
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#94a3b8",
-            fontSize: "12.5px",
-            fontWeight: 600,
-            cursor: "pointer",
-            marginTop: "16px"
-          }}
-        >
-          Continue browsing as guest
-        </button>
-      </div>
-    </div>
-  );
-}
