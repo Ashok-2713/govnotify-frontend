@@ -342,6 +342,7 @@ export default function JobReviews({ jobId, jobTitle, userEmail, onBack }) {
       setReviewText("");
       fetchReviews();
     } catch (networkErr) {
+      console.error("Submit error:", networkErr);
       console.error("Network error during review submission to", submitUrl, ":", networkErr);
       setFormError("Network error: Backend might be starting up (Render free tier wakes up after ~50s). Please check your connection and retry.");
     } finally {
