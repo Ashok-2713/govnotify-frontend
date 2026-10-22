@@ -599,6 +599,114 @@ export default function UsersAndActivity({ adminEmail = "ashokudhay2007@gmail.co
               </div>
             </div>
           </div>
+
+          {/* CARD: RECENT GUEST LOGINS */}
+          <div className="pro-card" style={{ marginTop: "1.5rem" }}>
+            <div className="card-top-header">
+              <div className="header-info">
+                <div className="card-icon-pill icon-orange">
+                  <Users size={20} color="#ea580c" />
+                </div>
+                <div>
+                  <h2 className="card-heading">Recent Guest Logins</h2>
+                  <p className="card-desc">
+                    Temporary visitor sessions exploring the portal via Guest Mode.
+                  </p>
+                </div>
+              </div>
+              <span className="count-pill">{guestSessions.length} sessions</span>
+            </div>
+
+            {guestSessions.length === 0 ? (
+              <div className="table-empty-box" style={{ padding: "2.5rem 1.5rem" }}>
+                <Clock size={36} color="#94a3b8" />
+                <h3>No guest sessions recorded yet</h3>
+                <p>When visitors click "Continue as Guest", their audit trail appears here.</p>
+              </div>
+            ) : (
+              <div className="table-responsive-container">
+                <table className="gov-table">
+                  <thead>
+                    <tr>
+                      <th>Guest ID / Session</th>
+                      <th>Login Time</th>
+                      <th>Access Level</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guestSessions.map((session, idx) => (
+                      <tr key={session.id || idx}>
+                        <td>
+                          <div className="user-profile-cell">
+                            <div className="user-table-avatar" style={{ backgroundColor: "#fef3c7", color: "#d97706", fontWeight: 700 }}>
+                              G
+                            </div>
+                            <div className="user-table-name-wrap">
+                              <div className="user-table-name" style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                                {session.guestId || "Unknown Guest"}
+                              </div>
+                              <div className="user-table-sub">Temporary Session</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            <span style={{ fontWeight: 500, color: "#0f172a", fontSize: "0.85rem" }}>
+                              {formatDate(session.loginTime)}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                              {timeAgo(session.loginTime)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className="role-tag"
+                            style={{
+                              backgroundColor: "#fef3c7",
+                              color: "#b45309",
+                              border: "1px solid #fde68a",
+                              fontWeight: 600,
+                              padding: "3px 10px",
+                              borderRadius: "12px",
+                              fontSize: "0.75rem",
+                              display: "inline-block"
+                            }}
+                          >
+                            Guest
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              fontSize: "0.8rem",
+                              color: "#d97706",
+                              fontWeight: 500
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: "#f59e0b",
+                                display: "inline-block"
+                              }}
+                            />
+                            Restricted
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN: RECENT REAL USER ACTIVITY + SECURITY NOTICE */}

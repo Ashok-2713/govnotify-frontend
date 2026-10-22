@@ -15,6 +15,7 @@ import AIAssistant from "./AIAssistant";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import JobReviews from "./JobReviews";
 import AIRecommendations from "./AIRecommendations";
+import GuestLoginButton from "./GuestLoginButton";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   Shield, Search, Bell, CheckCircle2, Heart, FileText, Calendar, User, Lock, Eye, EyeOff,
@@ -58,6 +59,7 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [showJobReviews, setShowJobReviews] = useState(false);
   const [reviewJobData, setReviewJobData] = useState(null);
 
@@ -134,6 +136,7 @@ function App() {
       if (response.ok && (data.role === "USER" || response.ok)) {
         setUserEmail(data.email || email);
         setIsUser(true);
+        setIsGuest(false);
         setCurrentPage("dashboard");
         return;
       }
@@ -164,6 +167,7 @@ function App() {
           localStorage.setItem("candidateName", data.name);
         }
         setIsUser(true);
+        setIsGuest(false);
         setCurrentPage("dashboard");
         setModal(null);
         setLoginMessage("");
@@ -289,6 +293,7 @@ function App() {
           onBack={() => setShowAIRecommendations(false)}
           onProfileClick={() => {
             setShowAIRecommendations(false);
+            setIsGuest(false);
             setCurrentPage("profile");
           }}
         />
@@ -326,10 +331,13 @@ function App() {
       userView = (
         <UserDashboard
           userEmail={userEmail}
+          isGuest={isGuest}
+          onShowAuthWall={() => alert("Please login or register to access this feature.")}
           appliedEligibilityFilter={eligibilityFilter}
           onClearEligibilityFilter={() => setEligibilityFilter(null)}
           onLogout={() => {
             setIsUser(false);
+            setIsGuest(false);
             setEligibilityFilter(null);
             setShowSavedJobs(false);
             setShowEligibility(false);
@@ -678,6 +686,15 @@ function App() {
                   />
                 </div>
               </div>
+              <GuestLoginButton
+                onGuestLoginSuccess={(email) => {
+                  setUserEmail(email);
+                  setIsUser(true);
+                  setIsGuest(true);
+                  setModal(null);
+                }}
+                setModal={setModal}
+              />
               <div className="modal-footer-link">
                 New to GovNotify? <button type="button" onClick={() => openModal("register")}>Create an Account</button>
               </div>
