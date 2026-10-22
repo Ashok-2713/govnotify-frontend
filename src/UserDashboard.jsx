@@ -7,6 +7,8 @@ import {
   ClipboardCheck, Bot, MessageSquare, Star
 } from "lucide-react";
 
+import JobLogo from "./components/JobLogo";
+
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 function daysLeft(dateStr) {
@@ -73,27 +75,6 @@ function getDayNum(dateStr) {
   return String(formatDateBadge(dateStr).day);
 }
 
-function getOrgLogo(stateName, organization, title) {
-  const str = `${stateName || ''} ${organization || ''} ${title || ''}`.toLowerCase();
-  if (str.includes("railway") || str.includes("rrb") || str.includes("ntpc")) return "/logos/railway.png";
-  if (str.includes("ssc") || str.includes("staff selection")) return "/logos/ssc.png";
-  if (str.includes("upsc") || str.includes("union public service")) return "/logos/upsc.png";
-  if (str.includes("post") || str.includes("dak")) return "/logos/post.png";
-  if (str.includes("tamil nadu") || str.includes("tnpsc")) return "/logos/tamilnadu.png";
-  if (str.includes("karnataka") || str.includes("kpsc") || str.includes("kea")) return "/logos/karnataka.png";
-  if (str.includes("kerala")) return "/logos/kerala.png";
-  if (str.includes("andhra") || str.includes("appsc")) return "/logos/andhra.png";
-  if (str.includes("telangana") || str.includes("tspsc")) return "/logos/telangana.png";
-  if (str.includes("central") || str.includes("india") || str.includes("govt")) return "/logos/central.png";
-  return null;
-}
-
-const JobLogo = ({ url, organization, state, title }) => {
-  const orgLogo = getOrgLogo(state, organization, title);
-  const getDomain = (u) => {
-    if (!u) return null;
-    try { return new URL(u).hostname; } catch { return null; }
-  };
   const domain = getDomain(url);
   const sources = useMemo(() => [
     orgLogo,
