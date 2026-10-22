@@ -570,9 +570,14 @@ function App() {
             </div>
 
             <div className="modal-right-form">
-              <div className="goi-header">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem" className="goi-emblem" />
-                <div className="goi-text"><span>भारत सरकार</span><small>GOVERNMENT OF INDIA</small></div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "24px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px" }}>
+                <div style={{ background: "linear-gradient(135deg, #10b981, #047857)", padding: "8px", borderRadius: "10px", display: "grid", placeItems: "center" }}>
+                  <Landmark size={20} color="#ffffff" />
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", lineHeight: 1 }}>GovNotify</div>
+                  <div style={{ fontSize: "11px", color: "#64748b", fontWeight: "600" }}>Secure Login</div>
+                </div>
               </div>
               <div className="form-head">
                 <h2>Welcome Back!</h2>
